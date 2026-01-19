@@ -23,6 +23,7 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/contexts/AuthContext";
 import { useGame, MiniGame } from "@/contexts/GameContext";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -87,6 +88,7 @@ export default function PlaylistDetailScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
+  const { user } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "PlaylistDetail">>();
   const { playlists, miniGames, deletePlaylist, createSession } = useGame();
@@ -132,8 +134,13 @@ export default function PlaylistDetailScreen() {
   };
 
   const handlePlay = async () => {
+    if (!user) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const session = await createSession(playlist.id, true);
+    const session = await createSession(playlist.id, true, {
+      id: user.id,
+      username: user.username,
+      avatarUrl: user.avatarUrl,
+    });
     navigation.navigate("SessionLobby", { sessionId: session.id });
   };
 

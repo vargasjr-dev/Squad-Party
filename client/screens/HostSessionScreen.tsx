@@ -23,6 +23,7 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/contexts/AuthContext";
 import { useGame, Playlist } from "@/contexts/GameContext";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -92,6 +93,7 @@ export default function HostSessionScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
+  const { user } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { playlists, createSession } = useGame();
   const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
@@ -101,11 +103,15 @@ export default function HostSessionScreen() {
   const myPlaylists = playlists.filter((p) => p.creatorId === "current_user");
 
   const handleCreateSession = async () => {
-    if (!selectedPlaylist) return;
+    if (!selectedPlaylist || !user) return;
     setIsLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      const session = await createSession(selectedPlaylist, isPublic);
+      const session = await createSession(selectedPlaylist, isPublic, {
+        id: user.id,
+        username: user.username,
+        avatarUrl: user.avatarUrl,
+      });
       navigation.replace("SessionLobby", { sessionId: session.id });
     } catch (error) {
       console.error("Failed to create session:", error);

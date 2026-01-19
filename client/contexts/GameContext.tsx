@@ -42,6 +42,12 @@ export interface SessionPlayer {
   isReady: boolean;
 }
 
+interface HostInfo {
+  id: string;
+  username: string;
+  avatarUrl: string | null;
+}
+
 interface GameContextType {
   miniGames: MiniGame[];
   playlists: Playlist[];
@@ -50,7 +56,7 @@ interface GameContextType {
   createPlaylist: (name: string, description: string, gameIds: string[]) => Promise<Playlist>;
   updatePlaylist: (id: string, updates: Partial<Playlist>) => Promise<void>;
   deletePlaylist: (id: string) => Promise<void>;
-  createSession: (playlistId: string, isPublic: boolean) => Promise<Session>;
+  createSession: (playlistId: string, isPublic: boolean, host: HostInfo) => Promise<Session>;
   joinSession: (sessionId: string, player: SessionPlayer) => Promise<void>;
   leaveSession: () => Promise<void>;
   startGame: () => Promise<void>;
@@ -178,15 +184,23 @@ export function GameProvider({ children }: { children: ReactNode }) {
     await savePlaylists(updated);
   };
 
-  const createSession = async (playlistId: string, isPublic: boolean) => {
+  const createSession = async (playlistId: string, isPublic: boolean, host: HostInfo) => {
     const playlist = playlists.find((p) => p.id === playlistId);
+    const hostPlayer: SessionPlayer = {
+      id: host.id,
+      username: host.username,
+      avatarUrl: host.avatarUrl,
+      score: 0,
+      isHost: true,
+      isReady: true,
+    };
     const newSession: Session = {
       id: `session_${Date.now()}`,
-      hostId: "current_user",
-      hostName: "You",
+      hostId: host.id,
+      hostName: host.username,
       playlistId,
       playlistName: playlist?.name || "Unknown Playlist",
-      players: [],
+      players: [hostPlayer],
       status: "waiting",
       currentGameIndex: 0,
       isPublic,
