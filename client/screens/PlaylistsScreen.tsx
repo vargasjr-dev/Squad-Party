@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -22,6 +22,7 @@ import Animated, {
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/contexts/AuthContext";
 import { useGame, Playlist } from "@/contexts/GameContext";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -160,13 +161,20 @@ export default function PlaylistsScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { user } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { playlists } = useGame();
+  const { playlists, loadPlaylists } = useGame();
   const [selectedTab, setSelectedTab] = useState<TabType>("my");
+
+  useEffect(() => {
+    if (user?.id) {
+      loadPlaylists(user.id);
+    }
+  }, [user?.id]);
 
   const filteredPlaylists =
     selectedTab === "my"
-      ? playlists.filter((p) => p.creatorId === "current_user")
+      ? playlists.filter((p) => p.creatorId === user?.id)
       : playlists.filter((p) => p.isPublic);
 
   const handlePlaylistPress = (playlist: Playlist) => {

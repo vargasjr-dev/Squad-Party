@@ -23,6 +23,7 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/contexts/AuthContext";
 import { useGame, MiniGame } from "@/contexts/GameContext";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -125,6 +126,7 @@ export default function CreatePlaylistScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
+  const { user } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "CreatePlaylist">>();
   const { miniGames, createPlaylist, updatePlaylist } = useGame();
@@ -158,8 +160,8 @@ export default function CreatePlaylistScreen() {
           description: description.trim(),
           games: selectedGames,
         });
-      } else {
-        await createPlaylist(name.trim(), description.trim(), selectedGames);
+      } else if (user) {
+        await createPlaylist(name.trim(), description.trim(), selectedGames, user.id);
       }
       navigation.goBack();
     } catch (error) {

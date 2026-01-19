@@ -100,7 +100,7 @@ export default function HostSessionScreen() {
   const [isPublic, setIsPublic] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
-  const myPlaylists = playlists.filter((p) => p.creatorId === "current_user");
+  const myPlaylists = playlists.filter((p) => p.creatorId === user?.id);
 
   const handleCreateSession = async () => {
     if (!selectedPlaylist || !user) return;

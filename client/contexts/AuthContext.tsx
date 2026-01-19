@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiRequest } from "@/lib/query-client";
 
 interface User {
   id: string;
@@ -34,7 +35,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setUser(JSON.parse(stored));
+        const localUser = JSON.parse(stored);
+        setUser(localUser);
+        
+        try {
+          const res = await apiRequest("GET", `/api/users/${localUser.id}`);
+          const serverUser = await res.json();
+          setUser(serverUser);
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(serverUser));
+        } catch (error) {
+          console.log("Could not sync with server, using local data");
+        }
       }
     } catch (error) {
       console.error("Failed to load user:", error);
@@ -44,16 +55,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = async (username: string) => {
+    const userId = `user_${Date.now()}`;
     const newUser: User = {
-      id: `user_${Date.now()}`,
+      id: userId,
       username,
       avatarUrl: null,
       gamesPlayed: 0,
       wins: 0,
       topRank: 0,
     };
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
-    setUser(newUser);
+    
+    try {
+      const res = await apiRequest("POST", "/api/users", newUser);
+      const serverUser = await res.json();
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(serverUser));
+      setUser(serverUser);
+    } catch (error) {
+      console.error("Failed to sync user to server, saving locally:", error);
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
+      setUser(newUser);
+    }
   };
 
   const logout = async () => {
@@ -64,8 +85,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (updates: Partial<User>) => {
     if (!user) return;
     const updated = { ...user, ...updates };
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    setUser(updated);
+    
+    try {
+      const res = await apiRequest("PUT", `/api/users/${user.id}`, updated);
+      const serverUser = await res.json();
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(serverUser));
+      setUser(serverUser);
+    } catch (error) {
+      console.error("Failed to sync profile update:", error);
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      setUser(updated);
+    }
   };
 
   return (
