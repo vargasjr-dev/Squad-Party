@@ -6,6 +6,7 @@ import {
   TextInput,
   Pressable,
   ActivityIndicator,
+  Keyboard,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,11 +18,11 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Button } from "@/components/Button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Colors, Spacing, BorderRadius, Typography } from "@/constants/theme";
+import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -49,81 +50,90 @@ export default function LoginScreen() {
     transform: [{ scale: buttonScale.value }],
   }));
 
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
+
   return (
     <LinearGradient
       colors={[Colors.dark.backgroundRoot, Colors.dark.backgroundDefault]}
       style={styles.container}
     >
-      <View
-        style={[
-          styles.content,
-          {
-            paddingTop: insets.top + Spacing["4xl"],
-            paddingBottom: insets.bottom + Spacing.xl,
-          },
-        ]}
-      >
-        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.logoContainer}>
-          <Image
-            source={require("../../assets/images/icon.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <ThemedText type="display" style={styles.title}>
-            Squad Party
-          </ThemedText>
-          <ThemedText type="body" style={styles.subtitle}>
-            Challenge your friends in fast-paced mini-games
-          </ThemedText>
-        </Animated.View>
-
-        <Animated.View entering={FadeInUp.delay(300).springify()} style={styles.formContainer}>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your username"
-              placeholderTextColor={Colors.dark.textSecondary}
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-              autoCorrect={false}
-              testID="input-username"
+      <Pressable style={styles.container} onPress={dismissKeyboard}>
+        <KeyboardAwareScrollViewCompat
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingTop: insets.top + Spacing["4xl"],
+              paddingBottom: insets.bottom + Spacing.xl,
+            },
+          ]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.logoContainer}>
+            <Image
+              source={require("../../assets/images/icon.png")}
+              style={styles.logo}
+              resizeMode="contain"
             />
-          </View>
+            <ThemedText type="display" style={styles.title}>
+              Squad Party
+            </ThemedText>
+            <ThemedText type="body" style={styles.subtitle}>
+              Challenge your friends in fast-paced mini-games
+            </ThemedText>
+          </Animated.View>
 
-          <AnimatedPressable
-            style={[styles.primaryButton, buttonAnimatedStyle]}
-            onPress={handleLogin}
-            onPressIn={() => {
-              buttonScale.value = withSpring(0.95, { damping: 15, stiffness: 150 });
-            }}
-            onPressOut={() => {
-              buttonScale.value = withSpring(1, { damping: 15, stiffness: 150 });
-            }}
-            disabled={!username.trim() || isLoading}
-            testID="button-login"
-          >
-            <LinearGradient
-              colors={[Colors.dark.primary, "#FF5252"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.buttonGradient}
+          <Animated.View entering={FadeInUp.delay(300).springify()} style={styles.formContainer}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your username"
+                placeholderTextColor={Colors.dark.textSecondary}
+                value={username}
+                onChangeText={setUsername}
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+                testID="input-username"
+              />
+            </View>
+
+            <AnimatedPressable
+              style={[styles.primaryButton, buttonAnimatedStyle]}
+              onPress={handleLogin}
+              onPressIn={() => {
+                buttonScale.value = withSpring(0.95, { damping: 15, stiffness: 150 });
+              }}
+              onPressOut={() => {
+                buttonScale.value = withSpring(1, { damping: 15, stiffness: 150 });
+              }}
+              disabled={!username.trim() || isLoading}
+              testID="button-login"
             >
-              {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <ThemedText type="subheading" style={styles.buttonText}>
-                  Get Started
-                </ThemedText>
-              )}
-            </LinearGradient>
-          </AnimatedPressable>
+              <LinearGradient
+                colors={[Colors.dark.primary, "#FF5252"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.buttonGradient}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <ThemedText type="subheading" style={styles.buttonText}>
+                    Get Started
+                  </ThemedText>
+                )}
+              </LinearGradient>
+            </AnimatedPressable>
 
-          <ThemedText type="caption" style={styles.disclaimer}>
-            By continuing, you agree to our Terms of Service and Privacy Policy
-          </ThemedText>
-        </Animated.View>
-      </View>
+            <ThemedText type="caption" style={styles.disclaimer}>
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </ThemedText>
+          </Animated.View>
+        </KeyboardAwareScrollViewCompat>
+      </Pressable>
     </LinearGradient>
   );
 }
@@ -133,7 +143,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: Spacing.xl,
     justifyContent: "space-between",
   },
