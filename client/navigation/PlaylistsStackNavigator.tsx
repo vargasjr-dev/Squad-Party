@@ -5,43 +5,43 @@ import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import ProfileScreen from "@/screens/ProfileScreen";
+import PlaylistsScreen from "@/screens/PlaylistsScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useTheme } from "@/hooks/useTheme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
-export type ProfileStackParamList = {
-  Profile: undefined;
+export type PlaylistsStackParamList = {
+  Playlists: undefined;
 };
 
-const Stack = createNativeStackNavigator<ProfileStackParamList>();
+const Stack = createNativeStackNavigator<PlaylistsStackParamList>();
 
-function SettingsButton() {
+function AddPlaylistButton() {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <Pressable
-      onPress={() => navigation.navigate("Settings")}
+      onPress={() => navigation.navigate("CreatePlaylist", {})}
       hitSlop={8}
-      testID="button-settings"
+      testID="button-add-playlist"
     >
-      <Feather name="settings" size={24} color={theme.text} />
+      <Feather name="plus" size={24} color={theme.text} />
     </Pressable>
   );
 }
 
-export default function ProfileStackNavigator() {
+export default function PlaylistsStackNavigator() {
   const screenOptions = useScreenOptions();
 
   return (
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen
-        name="Profile"
-        component={ProfileScreen}
+        name="Playlists"
+        component={PlaylistsScreen}
         options={{
-          headerTitle: "Profile",
-          headerRight: () => <SettingsButton />,
+          headerTitle: "Playlists",
+          headerRight: () => <AddPlaylistButton />,
         }}
       />
     </Stack.Navigator>

@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet, Image } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Spacing } from "@/constants/theme";
+import { Spacing, Colors } from "@/constants/theme";
 
 interface HeaderTitleProps {
   title: string;
@@ -28,12 +28,15 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
   icon: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     marginRight: Spacing.sm,
+    borderRadius: 8,
   },
   title: {
-    fontSize: 17,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
+    fontFamily: "Poppins_700Bold",
+    color: Colors.dark.text,
   },
 });

@@ -1,30 +1,43 @@
 import { Platform } from "react-native";
 
-const tintColorLight = "#007AFF";
-const tintColorDark = "#0A84FF";
-
 export const Colors = {
   light: {
-    text: "#11181C",
+    text: "#FFFFFF",
+    textSecondary: "#B4B4B8",
     buttonText: "#FFFFFF",
-    tabIconDefault: "#687076",
-    tabIconSelected: tintColorLight,
-    link: "#007AFF",
-    backgroundRoot: "#FFFFFF", // Elevation 0
-    backgroundDefault: "#F2F2F2", // Elevation 1
-    backgroundSecondary: "#E6E6E6", // Elevation 2
-    backgroundTertiary: "#D9D9D9", // Elevation 3
+    tabIconDefault: "#B4B4B8",
+    tabIconSelected: "#FF6B6B",
+    link: "#FF6B6B",
+    primary: "#FF6B6B",
+    secondary: "#FFD93D",
+    backgroundRoot: "#1A1A2E",
+    backgroundDefault: "#16213E",
+    backgroundSecondary: "#1F2B47",
+    backgroundTertiary: "#283550",
+    success: "#FFD700",
+    gold: "#FFD700",
+    silver: "#C0C0C0",
+    bronze: "#CD7F32",
+    error: "#DC143C",
   },
   dark: {
-    text: "#ECEDEE",
+    text: "#FFFFFF",
+    textSecondary: "#B4B4B8",
     buttonText: "#FFFFFF",
-    tabIconDefault: "#9BA1A6",
-    tabIconSelected: tintColorDark,
-    link: "#0A84FF",
-    backgroundRoot: "#1F2123", // Elevation 0
-    backgroundDefault: "#2A2C2E", // Elevation 1
-    backgroundSecondary: "#353739", // Elevation 2
-    backgroundTertiary: "#404244", // Elevation 3
+    tabIconDefault: "#B4B4B8",
+    tabIconSelected: "#FF6B6B",
+    link: "#FF6B6B",
+    primary: "#FF6B6B",
+    secondary: "#FFD93D",
+    backgroundRoot: "#1A1A2E",
+    backgroundDefault: "#16213E",
+    backgroundSecondary: "#1F2B47",
+    backgroundTertiary: "#283550",
+    success: "#FFD700",
+    gold: "#FFD700",
+    silver: "#C0C0C0",
+    bronze: "#CD7F32",
+    error: "#DC143C",
   },
 };
 
@@ -54,62 +67,83 @@ export const BorderRadius = {
 };
 
 export const Typography = {
+  display: {
+    fontSize: 32,
+    lineHeight: 40,
+    fontWeight: "700" as const,
+    fontFamily: "Poppins_700Bold",
+  },
   h1: {
     fontSize: 32,
     lineHeight: 40,
     fontWeight: "700" as const,
+    fontFamily: "Poppins_700Bold",
   },
   h2: {
     fontSize: 28,
     lineHeight: 36,
     fontWeight: "700" as const,
+    fontFamily: "Poppins_700Bold",
   },
   h3: {
     fontSize: 24,
     lineHeight: 32,
     fontWeight: "600" as const,
+    fontFamily: "Poppins_600SemiBold",
   },
   h4: {
     fontSize: 20,
     lineHeight: 28,
     fontWeight: "600" as const,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  subheading: {
+    fontSize: 18,
+    lineHeight: 26,
+    fontWeight: "500" as const,
+    fontFamily: "Poppins_500Medium",
   },
   body: {
     fontSize: 16,
     lineHeight: 24,
     fontWeight: "400" as const,
+    fontFamily: "Poppins_400Regular",
   },
   small: {
     fontSize: 14,
     lineHeight: 20,
     fontWeight: "400" as const,
+    fontFamily: "Poppins_400Regular",
+  },
+  caption: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "400" as const,
+    fontFamily: "Poppins_400Regular",
   },
   link: {
     fontSize: 16,
     lineHeight: 24,
     fontWeight: "400" as const,
+    fontFamily: "Poppins_400Regular",
   },
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: "system-ui",
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
+    sans: "Poppins_400Regular",
     serif: "ui-serif",
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: "ui-rounded",
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: "ui-monospace",
   },
   default: {
-    sans: "normal",
+    sans: "Poppins_400Regular",
     serif: "serif",
     rounded: "normal",
     mono: "monospace",
   },
   web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    sans: "Poppins, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     serif: "Georgia, 'Times New Roman', serif",
     rounded:
       "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
