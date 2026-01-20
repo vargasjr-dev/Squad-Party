@@ -32,9 +32,24 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 interface GameItemProps {
   game: MiniGame;
   index: number;
+  onPress: () => void;
 }
 
-function GameItem({ game, index }: GameItemProps) {
+function GameItem({ game, index, onPress }: GameItemProps) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98, { damping: 15, stiffness: 150 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 150 });
+  };
+
   const getTypeIcon = (type: string): keyof typeof Feather.glyphMap => {
     switch (type) {
       case "word":
@@ -51,33 +66,39 @@ function GameItem({ game, index }: GameItemProps) {
   };
 
   return (
-    <Animated.View
-      entering={FadeInDown.delay(index * 80).springify()}
-      style={styles.gameItem}
-    >
-      <View style={styles.gameIndex}>
-        <ThemedText type="small" style={styles.gameIndexText}>
-          {index + 1}
-        </ThemedText>
-      </View>
-      <View style={styles.gameIcon}>
-        <Feather
-          name={getTypeIcon(game.type)}
-          size={18}
-          color={Colors.dark.secondary}
-        />
-      </View>
-      <View style={styles.gameInfo}>
-        <ThemedText type="body" style={styles.gameName}>
-          {game.name}
-        </ThemedText>
-        <View style={styles.gameMeta}>
-          <Feather name="clock" size={12} color={Colors.dark.textSecondary} />
-          <ThemedText type="caption" style={styles.gameMetaText}>
-            {game.duration}s
+    <Animated.View entering={FadeInDown.delay(index * 80).springify()}>
+      <AnimatedPressable
+        style={[styles.gameItem, animatedStyle]}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+        testID={`game-item-${game.id}`}
+      >
+        <View style={styles.gameIndex}>
+          <ThemedText type="small" style={styles.gameIndexText}>
+            {index + 1}
           </ThemedText>
         </View>
-      </View>
+        <View style={styles.gameIcon}>
+          <Feather
+            name={getTypeIcon(game.type)}
+            size={18}
+            color={Colors.dark.secondary}
+          />
+        </View>
+        <View style={styles.gameInfo}>
+          <ThemedText type="body" style={styles.gameName}>
+            {game.name}
+          </ThemedText>
+          <View style={styles.gameMeta}>
+            <Feather name="clock" size={12} color={Colors.dark.textSecondary} />
+            <ThemedText type="caption" style={styles.gameMetaText}>
+              {game.duration}s
+            </ThemedText>
+          </View>
+        </View>
+        <Feather name="chevron-right" size={18} color={Colors.dark.textSecondary} />
+      </AnimatedPressable>
     </Animated.View>
   );
 }
@@ -110,6 +131,11 @@ export default function PlaylistDetailScreen() {
   const handleEdit = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate("CreatePlaylist", { playlist });
+  };
+
+  const handleGamePress = (gameId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("GameDetail", { gameId });
   };
 
   const handleDelete = () => {
@@ -158,7 +184,13 @@ export default function PlaylistDetailScreen() {
         scrollIndicatorInsets={{ bottom: insets.bottom }}
         data={playlistGames}
         keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => <GameItem game={item} index={index} />}
+        renderItem={({ item, index }) => (
+          <GameItem
+            game={item}
+            index={index}
+            onPress={() => handleGamePress(item.id)}
+          />
+        )}
         ListHeaderComponent={
           <Animated.View
             entering={FadeInDown.delay(100).springify()}

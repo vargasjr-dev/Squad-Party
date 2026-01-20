@@ -10,6 +10,8 @@ export interface MiniGame {
   duration: number;
   isDefault: boolean;
   creatorId: string | null;
+  creatorName: string;
+  rules: string[];
 }
 
 export interface Playlist {
@@ -80,6 +82,13 @@ const DEFAULT_GAMES: MiniGame[] = [
     duration: 60,
     isDefault: true,
     creatorId: null,
+    creatorName: "Squad Party",
+    rules: [
+      "Scrambled letters appear on screen",
+      "Type the correct word before time runs out",
+      "Longer words earn more points",
+      "First to solve gets bonus points",
+    ],
   },
   {
     id: "speed_typing",
@@ -89,6 +98,13 @@ const DEFAULT_GAMES: MiniGame[] = [
     duration: 45,
     isDefault: true,
     creatorId: null,
+    creatorName: "Squad Party",
+    rules: [
+      "Words appear one at a time on screen",
+      "Type each word exactly as shown",
+      "Speed and accuracy both count",
+      "Most words typed correctly wins",
+    ],
   },
   {
     id: "word_chain",
@@ -98,6 +114,13 @@ const DEFAULT_GAMES: MiniGame[] = [
     duration: 60,
     isDefault: true,
     creatorId: null,
+    creatorName: "Squad Party",
+    rules: [
+      "Each word must start with the last letter of the previous word",
+      "No repeating words allowed",
+      "Longer words earn more points",
+      "Keep the chain going as long as possible",
+    ],
   },
   {
     id: "trivia_blast",
@@ -107,6 +130,13 @@ const DEFAULT_GAMES: MiniGame[] = [
     duration: 30,
     isDefault: true,
     creatorId: null,
+    creatorName: "Squad Party",
+    rules: [
+      "Multiple choice questions appear on screen",
+      "Tap the correct answer as fast as you can",
+      "Faster answers earn more points",
+      "Wrong answers deduct points",
+    ],
   },
   {
     id: "memory_match",
@@ -116,6 +146,13 @@ const DEFAULT_GAMES: MiniGame[] = [
     duration: 45,
     isDefault: true,
     creatorId: null,
+    creatorName: "Squad Party",
+    rules: [
+      "Cards are laid face down on the grid",
+      "Flip two cards at a time to find matches",
+      "Remember card positions for faster matching",
+      "Most pairs matched wins the round",
+    ],
   },
   {
     id: "anagram_hunt",
@@ -125,6 +162,13 @@ const DEFAULT_GAMES: MiniGame[] = [
     duration: 60,
     isDefault: true,
     creatorId: null,
+    creatorName: "Squad Party",
+    rules: [
+      "A set of scrambled letters appears on screen",
+      "Find as many valid words as possible",
+      "Each word can only be used once",
+      "Longer words and rare finds earn bonus points",
+    ],
   },
 ];
 

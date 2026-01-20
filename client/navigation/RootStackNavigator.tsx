@@ -8,6 +8,8 @@ import GamePlayScreen from "@/screens/GamePlayScreen";
 import RoundResultsScreen from "@/screens/RoundResultsScreen";
 import CreatePlaylistScreen from "@/screens/CreatePlaylistScreen";
 import PlaylistDetailScreen from "@/screens/PlaylistDetailScreen";
+import GameDetailScreen from "@/screens/GameDetailScreen";
+import SoloGamePlayScreen from "@/screens/SoloGamePlayScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +24,8 @@ export type RootStackParamList = {
   RoundResults: { sessionId: string; gameIndex: number };
   CreatePlaylist: { playlist?: Playlist };
   PlaylistDetail: { playlistId: string };
+  GameDetail: { gameId: string };
+  SoloGamePlay: { gameId: string };
   Settings: undefined;
 };
 
@@ -88,6 +92,21 @@ export default function RootStackNavigator() {
             component={PlaylistDetailScreen}
             options={{
               headerTitle: "Playlist",
+            }}
+          />
+          <Stack.Screen
+            name="GameDetail"
+            component={GameDetailScreen}
+            options={{
+              headerTitle: "Game Info",
+            }}
+          />
+          <Stack.Screen
+            name="SoloGamePlay"
+            component={SoloGamePlayScreen}
+            options={{
+              headerShown: false,
+              gestureEnabled: false,
             }}
           />
           <Stack.Screen

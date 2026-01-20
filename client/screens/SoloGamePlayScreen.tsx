@@ -1,0 +1,409 @@
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  StyleSheet,
+  TextInput,
+  Pressable,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withSequence,
+  runOnJS,
+} from "react-native-reanimated";
+
+import { ThemedText } from "@/components/ThemedText";
+import { Button } from "@/components/Button";
+import { useTheme } from "@/hooks/useTheme";
+import { useGame } from "@/contexts/GameContext";
+import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
+
+const WORD_SCRAMBLE_WORDS = [
+  { word: "PARTY", scrambled: "YRPTA" },
+  { word: "GAMES", scrambled: "SGAEM" },
+  { word: "SQUAD", scrambled: "DQUAS" },
+  { word: "FRIEND", scrambled: "RFIEND" },
+  { word: "PLAYER", scrambled: "LYAEPR" },
+  { word: "WINNER", scrambled: "NNIREW" },
+  { word: "SCORE", scrambled: "RSOCE" },
+  { word: "FAST", scrambled: "SFTA" },
+  { word: "TIME", scrambled: "MTIE" },
+  { word: "WORD", scrambled: "RWDO" },
+];
+
+const SPEED_TYPING_WORDS = [
+  "quick", "brown", "fox", "jumps", "lazy", "dog",
+  "party", "game", "squad", "friend", "player", "winner",
+];
+
+export default function SoloGamePlayScreen() {
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<RootStackParamList, "SoloGamePlay">>();
+  const { miniGames } = useGame();
+
+  const game = miniGames.find((g) => g.id === route.params.gameId);
+
+  const [timeLeft, setTimeLeft] = useState(game?.duration || 60);
+  const [score, setScore] = useState(0);
+  const [input, setInput] = useState("");
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [correctWords, setCorrectWords] = useState(0);
+
+  const shakeValue = useSharedValue(0);
+  const progressWidth = useSharedValue(100);
+
+  const currentWord = WORD_SCRAMBLE_WORDS[currentWordIndex % WORD_SCRAMBLE_WORDS.length];
+  const currentTypingWord = SPEED_TYPING_WORDS[currentWordIndex % SPEED_TYPING_WORDS.length];
+
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      setIsGameOver(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+      progressWidth.value = withSpring(((timeLeft - 1) / (game?.duration || 60)) * 100);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft, game?.duration]);
+
+  const handleSubmit = useCallback(() => {
+    if (isGameOver) return;
+
+    const isCorrect = game?.type === "speed"
+      ? input.toLowerCase() === currentTypingWord.toLowerCase()
+      : input.toUpperCase() === currentWord.word;
+
+    if (isCorrect) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const points = game?.type === "speed" ? 10 : input.length * 10;
+      setScore((prev) => prev + points);
+      setCorrectWords((prev) => prev + 1);
+      setCurrentWordIndex((prev) => prev + 1);
+      setInput("");
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      shakeValue.value = withSequence(
+        withSpring(-10),
+        withSpring(10),
+        withSpring(-10),
+        withSpring(0)
+      );
+    }
+  }, [input, currentWord, currentTypingWord, isGameOver, game?.type]);
+
+  const handlePlayAgain = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setTimeLeft(game?.duration || 60);
+    setScore(0);
+    setInput("");
+    setCurrentWordIndex(0);
+    setIsGameOver(false);
+    setCorrectWords(0);
+    progressWidth.value = 100;
+  };
+
+  const handleExit = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.goBack();
+  };
+
+  const inputAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeValue.value }],
+  }));
+
+  const progressAnimatedStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.value}%`,
+  }));
+
+  if (!game) {
+    return (
+      <View style={[styles.container, styles.centerContainer, { backgroundColor: theme.backgroundRoot }]}>
+        <ThemedText type="body">Game not found</ThemedText>
+      </View>
+    );
+  }
+
+  if (isGameOver) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.backgroundRoot, paddingTop: insets.top }]}>
+        <Animated.View entering={FadeIn} style={styles.gameOverContainer}>
+          <View style={styles.trophyContainer}>
+            <Feather name="award" size={80} color={Colors.dark.secondary} />
+          </View>
+          <ThemedText type="h1" style={styles.gameOverTitle}>
+            Time's Up!
+          </ThemedText>
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <ThemedText type="h2" style={styles.statValue}>
+                {score}
+              </ThemedText>
+              <ThemedText type="caption" style={styles.statLabel}>
+                Points
+              </ThemedText>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <ThemedText type="h2" style={styles.statValue}>
+                {correctWords}
+              </ThemedText>
+              <ThemedText type="caption" style={styles.statLabel}>
+                Correct
+              </ThemedText>
+            </View>
+          </View>
+          <View style={styles.gameOverActions}>
+            <Button onPress={handlePlayAgain} variant="primary">
+              <ThemedText type="body" style={{ color: Colors.dark.backgroundRoot }}>
+                Play Again
+              </ThemedText>
+            </Button>
+            <Button onPress={handleExit} variant="secondary">
+              <ThemedText type="body" style={{ color: Colors.dark.text }}>
+                Exit
+              </ThemedText>
+            </Button>
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot, paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <Pressable
+          style={styles.exitButton}
+          onPress={handleExit}
+          testID="button-close-game"
+        >
+          <Feather name="x" size={24} color={Colors.dark.text} />
+        </Pressable>
+        <View style={styles.timerContainer}>
+          <Feather name="clock" size={16} color={Colors.dark.primary} />
+          <ThemedText type="h3" style={[styles.timer, timeLeft <= 10 && styles.timerWarning]}>
+            {timeLeft}s
+          </ThemedText>
+        </View>
+        <View style={styles.scoreContainer}>
+          <ThemedText type="body" style={styles.scoreLabel}>Score</ThemedText>
+          <ThemedText type="h3" style={styles.scoreValue}>{score}</ThemedText>
+        </View>
+      </View>
+
+      <View style={styles.progressBarContainer}>
+        <Animated.View style={[styles.progressBar, progressAnimatedStyle]} />
+      </View>
+
+      <View style={styles.gameArea}>
+        <Animated.View entering={FadeInDown.springify()} style={styles.wordContainer}>
+          <ThemedText type="caption" style={styles.instruction}>
+            {game.type === "speed" ? "Type this word:" : "Unscramble:"}
+          </ThemedText>
+          <ThemedText type="h1" style={styles.scrambledWord}>
+            {game.type === "speed" ? currentTypingWord : currentWord.scrambled}
+          </ThemedText>
+        </Animated.View>
+
+        <Animated.View style={[styles.inputContainer, inputAnimatedStyle]}>
+          <TextInput
+            style={styles.input}
+            value={input}
+            onChangeText={setInput}
+            placeholder="Type your answer..."
+            placeholderTextColor={Colors.dark.textSecondary}
+            autoCapitalize={game.type === "speed" ? "none" : "characters"}
+            autoCorrect={false}
+            returnKeyType="done"
+            onSubmitEditing={handleSubmit}
+            testID="input-answer"
+          />
+          <Pressable
+            style={styles.submitButton}
+            onPress={handleSubmit}
+            testID="button-submit-answer"
+          >
+            <Feather name="arrow-right" size={24} color={Colors.dark.backgroundRoot} />
+          </Pressable>
+        </Animated.View>
+
+        <View style={styles.hintContainer}>
+          <ThemedText type="small" style={styles.hintText}>
+            Words completed: {correctWords}
+          </ThemedText>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  centerContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  exitButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.dark.backgroundDefault,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  timerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.dark.backgroundDefault,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    gap: Spacing.xs,
+  },
+  timer: {
+    color: Colors.dark.text,
+  },
+  timerWarning: {
+    color: Colors.dark.primary,
+  },
+  scoreContainer: {
+    alignItems: "flex-end",
+  },
+  scoreLabel: {
+    color: Colors.dark.textSecondary,
+    fontSize: 12,
+  },
+  scoreValue: {
+    color: Colors.dark.secondary,
+  },
+  progressBarContainer: {
+    height: 4,
+    backgroundColor: Colors.dark.backgroundDefault,
+    marginHorizontal: Spacing.lg,
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  progressBar: {
+    height: "100%",
+    backgroundColor: Colors.dark.primary,
+    borderRadius: 2,
+  },
+  gameArea: {
+    flex: 1,
+    paddingHorizontal: Spacing.lg,
+    justifyContent: "center",
+  },
+  wordContainer: {
+    alignItems: "center",
+    marginBottom: Spacing["3xl"],
+  },
+  instruction: {
+    color: Colors.dark.textSecondary,
+    marginBottom: Spacing.sm,
+  },
+  scrambledWord: {
+    color: Colors.dark.secondary,
+    fontSize: 48,
+    letterSpacing: 8,
+    textAlign: "center",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    backgroundColor: Colors.dark.backgroundDefault,
+    borderRadius: BorderRadius.lg,
+    overflow: "hidden",
+  },
+  input: {
+    flex: 1,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    fontSize: 18,
+    color: Colors.dark.text,
+    fontFamily: "Poppins_400Regular",
+  },
+  submitButton: {
+    backgroundColor: Colors.dark.primary,
+    paddingHorizontal: Spacing.lg,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  hintContainer: {
+    alignItems: "center",
+    marginTop: Spacing["2xl"],
+  },
+  hintText: {
+    color: Colors.dark.textSecondary,
+  },
+  gameOverContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+  },
+  trophyContainer: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: Colors.dark.backgroundDefault,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
+  gameOverTitle: {
+    color: Colors.dark.text,
+    marginBottom: Spacing.xl,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.dark.backgroundDefault,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    marginBottom: Spacing["3xl"],
+  },
+  statItem: {
+    alignItems: "center",
+    paddingHorizontal: Spacing.xl,
+  },
+  statValue: {
+    color: Colors.dark.secondary,
+  },
+  statLabel: {
+    color: Colors.dark.textSecondary,
+    marginTop: Spacing.xs,
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: Colors.dark.backgroundSecondary,
+  },
+  gameOverActions: {
+    width: "100%",
+    gap: Spacing.md,
+  },
+});
