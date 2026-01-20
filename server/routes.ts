@@ -403,6 +403,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Game Artifacts API (for Vellum agent to fetch/save game files)
+  
+  // GET game artifacts - returns metadata.json and logic.lua
+  app.get("/api/games/:gameId/artifacts", async (req: Request, res: Response) => {
+    try {
+      const { gameId } = req.params;
+      
+      const game = await db.query.customGames.findFirst({
+        where: eq(customGames.id, gameId),
+      });
+      
+      if (!game) {
+        return res.status(404).json({ error: "Game not found" });
+      }
+      
+      res.json({
+        gameId: game.id,
+        metadata: game.metadata,
+        logicLua: game.logicLua,
+        assets: game.assets,
+      });
+    } catch (error) {
+      console.error("Error fetching game artifacts:", error);
+      res.status(500).json({ error: "Failed to fetch game artifacts" });
+    }
+  });
+  
+  // POST save game artifacts - updates metadata.json and/or logic.lua
+  app.post("/api/games/:gameId/artifacts", async (req: Request, res: Response) => {
+    try {
+      const { gameId } = req.params;
+      const { metadata, logicLua, assets } = req.body;
+      
+      const game = await db.query.customGames.findFirst({
+        where: eq(customGames.id, gameId),
+      });
+      
+      if (!game) {
+        return res.status(404).json({ error: "Game not found" });
+      }
+      
+      const updateData: Record<string, unknown> = { updatedAt: new Date() };
+      if (metadata !== undefined) updateData.metadata = metadata;
+      if (logicLua !== undefined) updateData.logicLua = logicLua;
+      if (assets !== undefined) updateData.assets = assets;
+      
+      const [updatedGame] = await db.update(customGames)
+        .set(updateData)
+        .where(eq(customGames.id, gameId))
+        .returning();
+      
+      res.json({
+        success: true,
+        gameId: updatedGame.id,
+        metadata: updatedGame.metadata,
+        logicLua: updatedGame.logicLua,
+        assets: updatedGame.assets,
+      });
+    } catch (error) {
+      console.error("Error saving game artifacts:", error);
+      res.status(500).json({ error: "Failed to save game artifacts" });
+    }
+  });
+
   // Vellum Workflow Proxy (for secure API key handling)
   app.post("/api/vellum/execute", async (req: Request, res: Response) => {
     try {
