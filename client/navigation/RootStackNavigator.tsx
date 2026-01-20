@@ -10,6 +10,7 @@ import CreatePlaylistScreen from "@/screens/CreatePlaylistScreen";
 import PlaylistDetailScreen from "@/screens/PlaylistDetailScreen";
 import GameDetailScreen from "@/screens/GameDetailScreen";
 import SoloGamePlayScreen from "@/screens/SoloGamePlayScreen";
+import GameStudioScreen from "@/screens/GameStudioScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +27,7 @@ export type RootStackParamList = {
   PlaylistDetail: { playlistId: string };
   GameDetail: { gameId: string };
   SoloGamePlay: { gameId: string };
+  GameStudio: { gameId: string; playlistId?: string };
   Settings: undefined;
 };
 
@@ -107,6 +109,14 @@ export default function RootStackNavigator() {
             options={{
               headerShown: false,
               gestureEnabled: false,
+            }}
+          />
+          <Stack.Screen
+            name="GameStudio"
+            component={GameStudioScreen}
+            options={{
+              headerShown: false,
+              presentation: "fullScreenModal",
             }}
           />
           <Stack.Screen
