@@ -204,11 +204,6 @@ export default function GameStudioScreen() {
           <ThemedText type="body" style={styles.messageText}>
             {item.content}
           </ThemedText>
-          {isAdmin && hasExecutionId ? (
-            <View style={styles.debugIndicator}>
-              <Feather name="external-link" size={10} color={Colors.dark.textSecondary} />
-            </View>
-          ) : null}
         </View>
       </Animated.View>
     );
@@ -582,12 +577,6 @@ const styles = StyleSheet.create({
   },
   messageText: {
     color: Colors.dark.text,
-  },
-  debugIndicator: {
-    position: "absolute",
-    bottom: 4,
-    right: 4,
-    opacity: 0.5,
   },
   inputContainer: {
     paddingHorizontal: Spacing.lg,

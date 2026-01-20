@@ -28,22 +28,67 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
-  const { login } = useAuth();
+  const { login, checkUsername } = useAuth();
   const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [needsPassword, setNeedsPassword] = useState(false);
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const buttonScale = useSharedValue(1);
+
+  const handleUsernameCheck = async () => {
+    if (!username.trim()) return;
+    setIsCheckingUsername(true);
+    setError("");
+    try {
+      const result = await checkUsername(username.trim());
+      if (result.exists && result.hasPassword) {
+        setNeedsPassword(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } else {
+        // No password needed, proceed to login
+        await handleLogin();
+      }
+    } catch (err) {
+      console.error("Username check failed:", err);
+      setError("Failed to check username");
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  };
 
   const handleLogin = async () => {
     if (!username.trim()) return;
+    if (needsPassword && !password.trim()) {
+      setError("Password is required");
+      return;
+    }
     setIsLoading(true);
+    setError("");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      await login(username.trim());
-    } catch (error) {
-      console.error("Login failed:", error);
+      await login(username.trim(), needsPassword ? password : undefined);
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      if (err.message === "PASSWORD_REQUIRED") {
+        setNeedsPassword(true);
+      } else if (err.message === "Invalid password") {
+        setError("Incorrect password");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      } else {
+        setError(err.message || "Login failed");
+      }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleBack = () => {
+    setNeedsPassword(false);
+    setPassword("");
+    setError("");
   };
 
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
@@ -85,31 +130,73 @@ export default function LoginScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(300).springify()} style={styles.formContainer}>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your username"
-                placeholderTextColor={Colors.dark.textSecondary}
-                value={username}
-                onChangeText={setUsername}
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={handleLogin}
-                testID="input-username"
-              />
-            </View>
+            {needsPassword ? (
+              <>
+                <Pressable onPress={handleBack} style={styles.backButton}>
+                  <ThemedText type="body" style={styles.backButtonText}>
+                    Back
+                  </ThemedText>
+                </Pressable>
+                <ThemedText type="body" style={styles.passwordPrompt}>
+                  Enter password for {username}
+                </ThemedText>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Password"
+                    placeholderTextColor={Colors.dark.textSecondary}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                    onSubmitEditing={handleLogin}
+                    testID="input-password"
+                  />
+                  <Pressable
+                    style={styles.showPasswordButton}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <ThemedText type="caption" style={styles.showPasswordText}>
+                      {showPassword ? "Hide" : "Show"}
+                    </ThemedText>
+                  </Pressable>
+                </View>
+              </>
+            ) : (
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your username"
+                  placeholderTextColor={Colors.dark.textSecondary}
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={handleUsernameCheck}
+                  testID="input-username"
+                />
+              </View>
+            )}
+
+            {error ? (
+              <ThemedText type="body" style={styles.errorText}>
+                {error}
+              </ThemedText>
+            ) : null}
 
             <AnimatedPressable
               style={[styles.primaryButton, buttonAnimatedStyle]}
-              onPress={handleLogin}
+              onPress={needsPassword ? handleLogin : handleUsernameCheck}
               onPressIn={() => {
                 buttonScale.value = withSpring(0.95, { damping: 15, stiffness: 150 });
               }}
               onPressOut={() => {
                 buttonScale.value = withSpring(1, { damping: 15, stiffness: 150 });
               }}
-              disabled={!username.trim() || isLoading}
+              disabled={!username.trim() || isLoading || isCheckingUsername || (needsPassword && !password.trim())}
               testID="button-login"
             >
               <LinearGradient
@@ -118,11 +205,11 @@ export default function LoginScreen() {
                 end={{ x: 1, y: 1 }}
                 style={styles.buttonGradient}
               >
-                {isLoading ? (
+                {isLoading || isCheckingUsername ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
                   <ThemedText type="subheading" style={styles.buttonText}>
-                    Get Started
+                    {needsPassword ? "Log In" : "Get Started"}
                   </ThemedText>
                 )}
               </LinearGradient>
@@ -202,5 +289,31 @@ const styles = StyleSheet.create({
   disclaimer: {
     color: Colors.dark.textSecondary,
     textAlign: "center",
+  },
+  backButton: {
+    marginBottom: Spacing.md,
+  },
+  backButtonText: {
+    color: Colors.dark.primary,
+  },
+  passwordPrompt: {
+    color: Colors.dark.text,
+    marginBottom: Spacing.lg,
+    textAlign: "center",
+  },
+  showPasswordButton: {
+    position: "absolute",
+    right: Spacing.lg,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+  },
+  showPasswordText: {
+    color: Colors.dark.primary,
+  },
+  errorText: {
+    color: Colors.dark.error,
+    textAlign: "center",
+    marginBottom: Spacing.md,
   },
 });

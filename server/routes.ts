@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
+import bcrypt from "bcryptjs";
 import { db } from "./db";
 import { users, playlists, sessions, customGames, type GameMetadata, type ChatMessage } from "../shared/schema";
 import { eq } from "drizzle-orm";
@@ -73,8 +74,10 @@ return Game
 `;
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Admin usernames list
-  const ADMIN_USERNAMES = ["vargas"];
+  // Admin usernames list with initial passwords
+  const ADMIN_USERS: Record<string, string> = {
+    "vargas": "902495"
+  };
 
   // User routes
   app.post("/api/users", async (req: Request, res: Response) => {
@@ -99,12 +102,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(userWithUsername);
       }
       
-      // Auto-grant admin for specific usernames
-      const isAdmin = ADMIN_USERNAMES.includes(username.toLowerCase());
+      // Auto-grant admin for specific usernames and set initial password
+      const lowerUsername = username.toLowerCase();
+      const isAdmin = lowerUsername in ADMIN_USERS;
+      let passwordHash = null;
+      
+      if (isAdmin && ADMIN_USERS[lowerUsername]) {
+        passwordHash = await bcrypt.hash(ADMIN_USERS[lowerUsername], 10);
+      }
       
       const [newUser] = await db.insert(users).values({
         id,
         username,
+        passwordHash,
         avatarUrl: avatarUrl || null,
         gamesPlayed: 0,
         wins: 0,
@@ -136,6 +146,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Check if username has password protection
+  app.get("/api/auth/check/:username", async (req: Request, res: Response) => {
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.username, req.params.username),
+      });
+      
+      if (!user) {
+        return res.json({ exists: false, hasPassword: false });
+      }
+      
+      res.json({ 
+        exists: true, 
+        hasPassword: !!user.passwordHash,
+        userId: user.id 
+      });
+    } catch (error) {
+      console.error("Error checking user:", error);
+      res.status(500).json({ error: "Failed to check user" });
+    }
+  });
+
+  // Login with password
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
+    try {
+      const { username, password } = req.body;
+      
+      const user = await db.query.users.findFirst({
+        where: eq(users.username, username),
+      });
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      if (!user.passwordHash) {
+        return res.status(400).json({ error: "User has no password set" });
+      }
+      
+      const isValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isValid) {
+        return res.status(401).json({ error: "Invalid password" });
+      }
+      
+      // Return user without passwordHash
+      const { passwordHash, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (error) {
+      console.error("Error logging in:", error);
+      res.status(500).json({ error: "Failed to login" });
+    }
+  });
+
+  // Set or change password
+  app.post("/api/users/:id/password", async (req: Request, res: Response) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, req.params.id),
+      });
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // If user has existing password, verify current password
+      if (user.passwordHash) {
+        if (!currentPassword) {
+          return res.status(400).json({ error: "Current password required" });
+        }
+        const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!isValid) {
+          return res.status(401).json({ error: "Invalid current password" });
+        }
+      }
+      
+      // Hash new password
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      
+      const [updatedUser] = await db.update(users)
+        .set({ passwordHash })
+        .where(eq(users.id, req.params.id))
+        .returning();
+      
+      // Return user without passwordHash
+      const { passwordHash: _, ...safeUser } = updatedUser;
+      res.json(safeUser);
+    } catch (error) {
+      console.error("Error setting password:", error);
+      res.status(500).json({ error: "Failed to set password" });
+    }
+  });
+
   app.put("/api/users/:id", async (req: Request, res: Response) => {
     try {
       const { username, avatarUrl, gamesPlayed, wins, topRank } = req.body;
