@@ -26,11 +26,21 @@ Squad Party is a multiplayer mobile game where users can:
 6. **Session Lobby** - Wait for players before starting
 7. **Game Play** - Active word scramble mini-game
 8. **Round Results** - Display rankings after each round
+9. **Game Detail** - View game info, creator, rules, and play solo
+10. **Solo Game Play** - Practice games solo with timer and scoring
+11. **Game Studio** - AI-powered game creation interface
+
+### Game Studio Feature
+The Game Studio allows users to create custom mini-games using AI assistance:
+- **3 Tabs**: Chat (AI assistant), Preview (live game), Code (metadata.json & logic.lua)
+- **Game Structure**: Each game has metadata.json, logic.lua, and assets directory
+- **AI Integration**: Vellum Workflow Deployment for AI-powered game editing
+- **Secrets Required**: VELLUM_API_KEY and VELLUM_WORKFLOW_ID
 
 ### Data Storage
-- User data stored in AsyncStorage (`@squad_party_user`)
-- Playlists stored in AsyncStorage (`@squad_party_playlists`)
-- Sessions stored in AsyncStorage (`@squad_party_sessions`)
+- PostgreSQL backend for persistent data storage
+- AsyncStorage for offline caching and quick access
+- Custom games stored in `custom_games` table with metadata, Lua logic, assets, and chat history
 
 ## Project Structure
 
