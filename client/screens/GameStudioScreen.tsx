@@ -98,40 +98,39 @@ export default function GameStudioScreen() {
     const userMessage = message.trim();
     setMessage("");
 
-    const tempUserMessage: ChatMessage = {
-      id: `temp_${Date.now()}`,
+    const userChatMessage: ChatMessage = {
+      id: `msg_${Date.now()}_user`,
       role: "user",
       content: userMessage,
       timestamp: Date.now(),
     };
 
+    // Update local state immediately for responsiveness
+    const updatedHistory = [...(game.chatHistory || []), userChatMessage];
     setGame((prev) => 
-      prev ? { ...prev, chatHistory: [...prev.chatHistory, tempUserMessage] } : prev
+      prev ? { ...prev, chatHistory: updatedHistory } : prev
     );
 
     try {
-      const response = await fetch(`${getApiUrl()}/api/vellum/execute`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          gameId: game.id,
-          message: userMessage,
-        }),
+      // STEP 1: Save user message to database first (persist before calling Vellum)
+      await apiRequest("PUT", `/api/custom-games/${game.id}`, {
+        chatHistory: updatedHistory,
       });
 
-      let fullResponse = "";
-      const reader = response.body?.getReader();
-      
-      if (reader) {
-        const decoder = new TextDecoder();
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          fullResponse += decoder.decode(value, { stream: true });
-        }
+      // STEP 2: Call Vellum (non-streaming endpoint that buffers response)
+      const response = await apiRequest("POST", "/api/vellum/chat", {
+        userId: user.id,
+        gameId: game.id,
+        message: userMessage,
+      });
+
+      const result = await response.json();
+
+      if (result.error) {
+        throw new Error(result.error);
       }
 
+      // STEP 3: Reload game to get updated state (Vellum may have updated artifacts)
       await loadGame();
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -141,9 +140,21 @@ export default function GameStudioScreen() {
         content: "Sorry, I encountered an error. Please try again.",
         timestamp: Date.now(),
       };
+      
+      // Add error message to existing history (which includes the user message)
+      const errorHistory = [...updatedHistory, errorMessage];
       setGame((prev) =>
-        prev ? { ...prev, chatHistory: [...prev.chatHistory, errorMessage] } : prev
+        prev ? { ...prev, chatHistory: errorHistory } : prev
       );
+      
+      // Save error message to database too
+      try {
+        await apiRequest("PUT", `/api/custom-games/${game.id}`, {
+          chatHistory: errorHistory,
+        });
+      } catch {
+        // Ignore secondary error
+      }
     } finally {
       setIsSending(false);
     }

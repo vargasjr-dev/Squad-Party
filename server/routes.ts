@@ -467,8 +467,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Vellum Workflow Proxy (for secure API key handling)
-  app.post("/api/vellum/execute", async (req: Request, res: Response) => {
+  // Vellum Chat endpoint (non-streaming, buffers full response server-side)
+  app.post("/api/vellum/chat", async (req: Request, res: Response) => {
     try {
       const { userId, gameId, message } = req.body;
       
@@ -477,16 +477,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Vellum API key not configured" });
       }
       
-      const VELLUM_WORKFLOW_ID = process.env.VELLUM_WORKFLOW_ID || "game-studio-workflow";
+      const VELLUM_WORKFLOW_ID = process.env.VELLUM_WORKFLOW_ID;
+      if (!VELLUM_WORKFLOW_ID) {
+        return res.status(500).json({ error: "Vellum workflow ID not configured" });
+      }
+
+      console.log(`[Vellum] Calling workflow ${VELLUM_WORKFLOW_ID} for game ${gameId}`);
       
-      // Set up streaming response
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
-      
-      // Call Vellum execute-stream endpoint
+      // Call Vellum execute-workflow endpoint (non-streaming)
       const vellumResponse = await fetch(
-        `https://api.vellum.ai/v1/execute-workflow-stream`,
+        `https://api.vellum.ai/v1/execute-workflow`,
         {
           method: "POST",
           headers: {
@@ -506,65 +506,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!vellumResponse.ok) {
         const errorText = await vellumResponse.text();
-        console.error("Vellum API error:", errorText);
-        res.write(`data: ${JSON.stringify({ error: "Vellum API error", details: errorText })}\n\n`);
-        res.end();
-        return;
+        console.error("[Vellum] API error:", errorText);
+        return res.status(vellumResponse.status).json({ 
+          error: "Vellum API error", 
+          details: errorText 
+        });
       }
       
-      // Stream the response back to client
-      const reader = vellumResponse.body?.getReader();
-      if (!reader) {
-        res.write(`data: ${JSON.stringify({ error: "No response body" })}\n\n`);
-        res.end();
-        return;
+      const vellumResult = await vellumResponse.json();
+      console.log("[Vellum] Workflow result:", JSON.stringify(vellumResult, null, 2));
+      
+      // Extract assistant response from Vellum output
+      let assistantContent = "I've updated your game. Please check the preview.";
+      
+      if (vellumResult.data?.outputs) {
+        const responseOutput = vellumResult.data.outputs.find(
+          (o: { name: string; value?: string }) => o.name === "response"
+        );
+        if (responseOutput?.value) {
+          assistantContent = responseOutput.value;
+        }
       }
       
-      const decoder = new TextDecoder();
-      let fullResponse = "";
-      
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value, { stream: true });
-        fullResponse += chunk;
-        res.write(chunk);
-      }
-      
-      // After streaming completes, update the game's chat history
+      // Add assistant message to chat history
       const game = await db.query.customGames.findFirst({
         where: eq(customGames.id, gameId),
       });
       
       if (game) {
-        const newUserMessage: ChatMessage = {
-          id: `msg_${Date.now()}_user`,
-          role: "user",
-          content: message,
-          timestamp: Date.now(),
-        };
-        
-        // Parse the final response from Vellum (extract assistant message)
-        let assistantContent = "I've updated your game. Please check the preview.";
-        try {
-          const lines = fullResponse.split("\n");
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const data = JSON.parse(line.slice(6));
-              if (data.type === "WORKFLOW.EXECUTION.FULFILLED" && data.data?.outputs) {
-                const outputMsg = data.data.outputs.find((o: { name: string }) => o.name === "response");
-                if (outputMsg?.value) {
-                  assistantContent = outputMsg.value;
-                }
-              }
-            }
-          }
-        } catch {
-          // Use default message if parsing fails
-        }
-        
-        const newAssistantMessage: ChatMessage = {
+        const assistantMessage: ChatMessage = {
           id: `msg_${Date.now()}_assistant`,
           role: "assistant",
           content: assistantContent,
@@ -573,17 +543,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         await db.update(customGames)
           .set({
-            chatHistory: [...(game.chatHistory || []), newUserMessage, newAssistantMessage],
+            chatHistory: [...(game.chatHistory || []), assistantMessage],
             updatedAt: new Date(),
           })
           .where(eq(customGames.id, gameId));
       }
       
-      res.end();
+      res.json({ 
+        success: true, 
+        response: assistantContent,
+        workflowResult: vellumResult 
+      });
     } catch (error) {
-      console.error("Error executing Vellum workflow:", error);
-      res.write(`data: ${JSON.stringify({ error: "Failed to execute workflow" })}\n\n`);
-      res.end();
+      console.error("[Vellum] Error executing workflow:", error);
+      res.status(500).json({ error: "Failed to execute workflow" });
     }
   });
 
