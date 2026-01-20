@@ -26,6 +26,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGame, MiniGame } from "@/contexts/GameContext";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { apiRequest } from "@/lib/query-client";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -136,6 +137,27 @@ export default function PlaylistDetailScreen() {
   const handleGamePress = (gameId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate("GameDetail", { gameId });
+  };
+
+  const handleCreateGame = async () => {
+    if (!user) return;
+    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    try {
+      const gameId = `custom_game_${Date.now()}`;
+      const res = await apiRequest("POST", "/api/custom-games", {
+        id: gameId,
+        creatorId: user.id,
+        playlistId: playlist.id,
+      });
+      
+      const newGame = await res.json();
+      navigation.navigate("GameStudio", { gameId: newGame.id, playlistId: playlist.id });
+    } catch (error) {
+      console.error("Failed to create game:", error);
+      Alert.alert("Error", "Failed to create game. Please try again.");
+    }
   };
 
   const handleDelete = () => {
@@ -250,9 +272,21 @@ export default function PlaylistDetailScreen() {
               </Pressable>
             </View>
 
-            <ThemedText type="h4" style={styles.sectionTitle}>
-              Games
-            </ThemedText>
+            <View style={styles.sectionHeader}>
+              <ThemedText type="h4" style={styles.sectionTitle}>
+                Games
+              </ThemedText>
+              <Pressable
+                style={styles.createGameButton}
+                onPress={handleCreateGame}
+                testID="button-create-game"
+              >
+                <Feather name="plus" size={18} color={Colors.dark.secondary} />
+                <ThemedText type="small" style={styles.createGameText}>
+                  Create Game
+                </ThemedText>
+              </Pressable>
+            </View>
           </Animated.View>
         }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -341,8 +375,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   sectionTitle: {
     color: Colors.dark.text,
+  },
+  createGameButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    backgroundColor: Colors.dark.backgroundDefault,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.dark.secondary,
+  },
+  createGameText: {
+    color: Colors.dark.secondary,
   },
   gameItem: {
     flexDirection: "row",
