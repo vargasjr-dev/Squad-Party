@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Linking,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -16,6 +18,8 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeIn, FadeInDown, SlideInRight } from "react-native-reanimated";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { scheduleOnRN } from "react-native-worklets";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -38,6 +42,7 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
+  executionId?: string;
 }
 
 interface CustomGame {
@@ -160,28 +165,64 @@ export default function GameStudioScreen() {
     }
   };
 
-  const renderChatMessage = ({ item }: { item: ChatMessage }) => (
-    <Animated.View
-      entering={FadeInDown.springify()}
-      style={[
-        styles.messageContainer,
-        item.role === "user" ? styles.userMessage : styles.assistantMessage,
-      ]}
-    >
-      <View
+  const openVellumExecution = (executionId: string) => {
+    const url = `https://app.vellum.ai/workflows/executions/${executionId}`;
+    Linking.openURL(url).catch((err) => {
+      console.error("Failed to open Vellum execution:", err);
+    });
+  };
+
+  const renderChatMessage = ({ item }: { item: ChatMessage }) => {
+    const isAdmin = user?.isAdmin === true;
+    const hasExecutionId = item.role === "assistant" && item.executionId;
+    
+    const tripleTapGesture = Gesture.Tap()
+      .numberOfTaps(3)
+      .onEnd(() => {
+        if (isAdmin && hasExecutionId && item.executionId) {
+          scheduleOnRN(Haptics.notificationAsync, Haptics.NotificationFeedbackType.Success);
+          scheduleOnRN(openVellumExecution, item.executionId);
+        }
+      });
+
+    const messageContent = (
+      <Animated.View
+        entering={FadeInDown.springify()}
         style={[
-          styles.messageBubble,
-          item.role === "user"
-            ? { backgroundColor: Colors.dark.primary }
-            : { backgroundColor: Colors.dark.backgroundSecondary },
+          styles.messageContainer,
+          item.role === "user" ? styles.userMessage : styles.assistantMessage,
         ]}
       >
-        <ThemedText type="body" style={styles.messageText}>
-          {item.content}
-        </ThemedText>
-      </View>
-    </Animated.View>
-  );
+        <View
+          style={[
+            styles.messageBubble,
+            item.role === "user"
+              ? { backgroundColor: Colors.dark.primary }
+              : { backgroundColor: Colors.dark.backgroundSecondary },
+          ]}
+        >
+          <ThemedText type="body" style={styles.messageText}>
+            {item.content}
+          </ThemedText>
+          {isAdmin && hasExecutionId ? (
+            <View style={styles.debugIndicator}>
+              <Feather name="external-link" size={10} color={Colors.dark.textSecondary} />
+            </View>
+          ) : null}
+        </View>
+      </Animated.View>
+    );
+
+    if (isAdmin && hasExecutionId) {
+      return (
+        <GestureDetector gesture={tripleTapGesture}>
+          {messageContent}
+        </GestureDetector>
+      );
+    }
+
+    return messageContent;
+  };
 
   const renderChatTab = () => (
     <KeyboardAvoidingView
@@ -541,6 +582,12 @@ const styles = StyleSheet.create({
   },
   messageText: {
     color: Colors.dark.text,
+  },
+  debugIndicator: {
+    position: "absolute",
+    bottom: 4,
+    right: 4,
+    opacity: 0.5,
   },
   inputContainer: {
     paddingHorizontal: Spacing.lg,

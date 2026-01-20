@@ -73,6 +73,9 @@ return Game
 `;
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Admin usernames list
+  const ADMIN_USERNAMES = ["vargas"];
+
   // User routes
   app.post("/api/users", async (req: Request, res: Response) => {
     try {
@@ -96,6 +99,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(userWithUsername);
       }
       
+      // Auto-grant admin for specific usernames
+      const isAdmin = ADMIN_USERNAMES.includes(username.toLowerCase());
+      
       const [newUser] = await db.insert(users).values({
         id,
         username,
@@ -103,6 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gamesPlayed: 0,
         wins: 0,
         topRank: 0,
+        isAdmin,
       }).returning();
       
       res.json(newUser);
@@ -516,8 +523,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const vellumResult = await vellumResponse.json();
       console.log("[Vellum] Workflow result:", JSON.stringify(vellumResult, null, 2));
       
-      // Extract assistant response from Vellum output
+      // Extract assistant response and execution ID from Vellum output
       let assistantContent = "I've updated your game. Please check the preview.";
+      const executionId = vellumResult.execution_id || null;
       
       if (vellumResult.data?.outputs) {
         const responseOutput = vellumResult.data.outputs.find(
@@ -528,7 +536,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Add assistant message to chat history
+      console.log(`[Vellum] Execution ID: ${executionId}`);
+      
+      // Add assistant message to chat history (with execution ID for admin debugging)
       const game = await db.query.customGames.findFirst({
         where: eq(customGames.id, gameId),
       });
@@ -539,6 +549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           role: "assistant",
           content: assistantContent,
           timestamp: Date.now(),
+          executionId: executionId || undefined,
         };
         
         await db.update(customGames)
@@ -552,6 +563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         response: assistantContent,
+        executionId,
         workflowResult: vellumResult 
       });
     } catch (error) {

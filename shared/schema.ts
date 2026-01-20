@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   gamesPlayed: integer("games_played").default(0).notNull(),
   wins: integer("wins").default(0).notNull(),
   topRank: integer("top_rank").default(0).notNull(),
+  isAdmin: boolean("is_admin").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -50,6 +51,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
+  executionId?: string; // Vellum workflow execution ID (for admin debugging)
 }
 
 export const customGames = pgTable("custom_games", {

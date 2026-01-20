@@ -9,6 +9,7 @@ interface User {
   gamesPlayed: number;
   wins: number;
   topRank: number;
+  isAdmin: boolean;
 }
 
 interface AuthContextType {
@@ -63,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       gamesPlayed: 0,
       wins: 0,
       topRank: 0,
+      isAdmin: false,
     };
     
     try {
