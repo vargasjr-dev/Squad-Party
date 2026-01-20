@@ -36,6 +36,35 @@ export const sessions = pgTable("sessions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export interface GameMetadata {
+  name: string;
+  description: string;
+  type: "word" | "trivia" | "speed" | "memory" | "custom";
+  duration: number;
+  rules: string[];
+  version: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
+}
+
+export const customGames = pgTable("custom_games", {
+  id: text("id").primaryKey(),
+  creatorId: text("creator_id").notNull().references(() => users.id),
+  playlistId: text("playlist_id").references(() => playlists.id),
+  metadata: jsonb("metadata").$type<GameMetadata>().notNull(),
+  logicLua: text("logic_lua").notNull(),
+  assets: jsonb("assets").$type<Record<string, string>>().default({}).notNull(),
+  chatHistory: jsonb("chat_history").$type<ChatMessage[]>().default([]).notNull(),
+  isPublished: boolean("is_published").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 interface SessionPlayer {
   id: string;
   username: string;
@@ -48,6 +77,7 @@ interface SessionPlayer {
 export const insertUserSchema = createInsertSchema(users).omit({ createdAt: true });
 export const insertPlaylistSchema = createInsertSchema(playlists).omit({ createdAt: true });
 export const insertSessionSchema = createInsertSchema(sessions).omit({ createdAt: true });
+export const insertCustomGameSchema = createInsertSchema(customGames).omit({ createdAt: true, updatedAt: true });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -55,3 +85,5 @@ export type Playlist = typeof playlists.$inferSelect;
 export type InsertPlaylist = z.infer<typeof insertPlaylistSchema>;
 export type Session = typeof sessions.$inferSelect;
 export type InsertSession = z.infer<typeof insertSessionSchema>;
+export type CustomGame = typeof customGames.$inferSelect;
+export type InsertCustomGame = z.infer<typeof insertCustomGameSchema>;
