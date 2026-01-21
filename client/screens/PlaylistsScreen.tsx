@@ -1,20 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
   FlatList,
   Pressable,
   Image,
+  ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Animated, {
   FadeInDown,
+  FadeIn,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -26,6 +29,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGame, Playlist } from "@/contexts/GameContext";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { apiRequest } from "@/lib/query-client";
+
+interface DraftGame {
+  id: string;
+  creatorId: string;
+  metadata: {
+    name: string;
+    description: string;
+    type: string;
+    duration: number;
+  };
+  chatHistory: { id: string; role: string; content: string }[];
+  updatedAt: string;
+}
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -156,6 +173,52 @@ function EmptyState({ isCommunity }: { isCommunity: boolean }) {
   );
 }
 
+function DraftCard({ draft, onPress }: { draft: DraftGame; onPress: () => void }) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95, { damping: 15, stiffness: 150 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 150 });
+  };
+
+  const messageCount = draft.chatHistory?.length || 0;
+  const lastMessage = draft.chatHistory?.[draft.chatHistory.length - 1];
+  const preview = lastMessage?.content?.substring(0, 50) || "No messages yet";
+
+  return (
+    <AnimatedPressable
+      style={[styles.draftCard, animatedStyle]}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
+      testID={`draft-card-${draft.id}`}
+    >
+      <View style={styles.draftIcon}>
+        <Feather name="cpu" size={20} color={Colors.dark.secondary} />
+      </View>
+      <ThemedText type="small" style={styles.draftName} numberOfLines={1}>
+        {draft.metadata.name}
+      </ThemedText>
+      <ThemedText type="caption" style={styles.draftPreview} numberOfLines={2}>
+        {preview}...
+      </ThemedText>
+      <View style={styles.draftMeta}>
+        <Feather name="message-circle" size={12} color={Colors.dark.textSecondary} />
+        <ThemedText type="caption" style={styles.draftMetaText}>
+          {messageCount}
+        </ThemedText>
+      </View>
+    </AnimatedPressable>
+  );
+}
+
 export default function PlaylistsScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
@@ -165,12 +228,35 @@ export default function PlaylistsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { playlists, loadPlaylists } = useGame();
   const [selectedTab, setSelectedTab] = useState<TabType>("my");
+  const [drafts, setDrafts] = useState<DraftGame[]>([]);
+  const [loadingDrafts, setLoadingDrafts] = useState(false);
+
+  const loadDrafts = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      setLoadingDrafts(true);
+      const res = await apiRequest("GET", `/api/custom-games?userId=${user.id}&drafts=true`);
+      const data = await res.json();
+      setDrafts(data);
+    } catch (error) {
+      console.error("Failed to load drafts:", error);
+    } finally {
+      setLoadingDrafts(false);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (user?.id) {
       loadPlaylists(user.id);
     }
   }, [user?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadDrafts();
+    }, [loadDrafts])
+  );
 
   const filteredPlaylists =
     selectedTab === "my"
@@ -180,6 +266,75 @@ export default function PlaylistsScreen() {
   const handlePlaylistPress = (playlist: Playlist) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate("PlaylistDetail", { playlistId: playlist.id });
+  };
+
+  const handleDraftPress = (draft: DraftGame) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("GameStudio", { gameId: draft.id });
+  };
+
+  const handleNewGame = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("GameStudio", {});
+  };
+
+  const renderDraftsSection = () => {
+    if (loadingDrafts) {
+      return (
+        <View style={styles.draftsSection}>
+          <View style={styles.draftsSectionHeader}>
+            <ThemedText type="subheading" style={styles.draftsSectionTitle}>
+              Game Studio
+            </ThemedText>
+          </View>
+          <View style={styles.draftsLoading}>
+            <ActivityIndicator size="small" color={Colors.dark.primary} />
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <Animated.View entering={FadeIn} style={styles.draftsSection}>
+        <View style={styles.draftsSectionHeader}>
+          <ThemedText type="subheading" style={styles.draftsSectionTitle}>
+            Game Studio
+          </ThemedText>
+          <Pressable onPress={handleNewGame} style={styles.newGameButton}>
+            <Feather name="plus" size={16} color={Colors.dark.secondary} />
+            <ThemedText type="caption" style={styles.newGameText}>
+              New Game
+            </ThemedText>
+          </Pressable>
+        </View>
+        
+        {drafts.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.draftsScroll}
+          >
+            {drafts.map((draft) => (
+              <DraftCard
+                key={draft.id}
+                draft={draft}
+                onPress={() => handleDraftPress(draft)}
+              />
+            ))}
+          </ScrollView>
+        ) : (
+          <Pressable style={styles.emptyDrafts} onPress={handleNewGame}>
+            <View style={styles.emptyDraftsIcon}>
+              <Feather name="cpu" size={24} color={Colors.dark.textSecondary} />
+            </View>
+            <ThemedText type="body" style={styles.emptyDraftsText}>
+              Create your first game with AI
+            </ThemedText>
+            <Feather name="chevron-right" size={18} color={Colors.dark.textSecondary} />
+          </Pressable>
+        )}
+      </Animated.View>
+    );
   };
 
   return (
@@ -204,10 +359,13 @@ export default function PlaylistsScreen() {
           />
         )}
         ListHeaderComponent={
-          <SegmentedControl
-            selectedTab={selectedTab}
-            onTabChange={setSelectedTab}
-          />
+          <>
+            {renderDraftsSection()}
+            <SegmentedControl
+              selectedTab={selectedTab}
+              onTabChange={setSelectedTab}
+            />
+          </>
         }
         ListEmptyComponent={<EmptyState isCommunity={selectedTab === "community"} />}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -299,5 +457,93 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     color: Colors.dark.textSecondary,
     textAlign: "center",
+  },
+  draftsSection: {
+    marginBottom: Spacing.xl,
+  },
+  draftsSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.md,
+  },
+  draftsSectionTitle: {
+    color: Colors.dark.text,
+  },
+  newGameButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.dark.backgroundDefault,
+  },
+  newGameText: {
+    color: Colors.dark.secondary,
+  },
+  draftsLoading: {
+    height: 120,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  draftsScroll: {
+    paddingRight: Spacing.lg,
+    gap: Spacing.md,
+  },
+  draftCard: {
+    width: 140,
+    backgroundColor: Colors.dark.backgroundDefault,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+  },
+  draftIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.dark.backgroundSecondary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.sm,
+  },
+  draftName: {
+    color: Colors.dark.text,
+    marginBottom: Spacing.xs,
+  },
+  draftPreview: {
+    color: Colors.dark.textSecondary,
+    marginBottom: Spacing.sm,
+    height: 32,
+  },
+  draftMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  draftMetaText: {
+    color: Colors.dark.textSecondary,
+  },
+  emptyDrafts: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.dark.backgroundDefault,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.dark.backgroundSecondary,
+    borderStyle: "dashed",
+  },
+  emptyDraftsIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.dark.backgroundSecondary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
+  },
+  emptyDraftsText: {
+    flex: 1,
+    color: Colors.dark.textSecondary,
   },
 });

@@ -27,7 +27,7 @@ export type RootStackParamList = {
   PlaylistDetail: { playlistId: string };
   GameDetail: { gameId: string };
   SoloGamePlay: { gameId: string };
-  GameStudio: { gameId: string; playlistId?: string };
+  GameStudio: { gameId?: string; playlistId?: string };
   Settings: undefined;
 };
 
