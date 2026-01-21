@@ -63,6 +63,7 @@ export const customGames = pgTable("custom_games", {
   logicLua: text("logic_lua").notNull(),
   assets: jsonb("assets").$type<Record<string, string>>().default({}).notNull(),
   chatHistory: jsonb("chat_history").$type<ChatMessage[]>().default([]).notNull(),
+  isDraft: boolean("is_draft").default(true).notNull(),
   isPublished: boolean("is_published").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
