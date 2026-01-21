@@ -35,6 +35,8 @@ The Game Studio allows users to create custom mini-games using AI assistance:
 - **3 Tabs**: Chat (AI assistant), Preview (live game), Code (metadata.json & logic.lua)
 - **Game Structure**: Each game has metadata.json, logic.lua, and assets directory
 - **AI Integration**: Vellum Workflow Deployment for AI-powered game editing
+- **Draft Saving**: Games are automatically saved as drafts after the first message, allowing users to resume editing later
+- **Drafts UI**: Visible in the Playlists tab as a horizontal scroll section showing all draft games
 - **Secrets Required**: VELLUM_API_KEY and VELLUM_WORKFLOW_ID
 
 ### Data Storage
