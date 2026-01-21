@@ -3,7 +3,7 @@ import { createServer, type Server } from "node:http";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
 import { users, playlists, sessions, customGames, type GameMetadata, type ChatMessage } from "../shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 const DEFAULT_METADATA: GameMetadata = {
   name: "New Game",
@@ -415,15 +415,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/custom-games", async (req: Request, res: Response) => {
     try {
       const userId = req.query.userId as string;
+      const draftsOnly = req.query.drafts === "true";
       
       if (userId) {
         const userGames = await db.query.customGames.findMany({
-          where: eq(customGames.creatorId, userId),
+          where: draftsOnly 
+            ? and(eq(customGames.creatorId, userId), eq(customGames.isDraft, true))
+            : eq(customGames.creatorId, userId),
+          orderBy: (games, { desc }) => [desc(games.updatedAt)],
         });
         return res.json(userGames);
       }
       
-      const allGames = await db.query.customGames.findMany();
+      const allGames = await db.query.customGames.findMany({
+        orderBy: (games, { desc }) => [desc(games.updatedAt)],
+      });
       res.json(allGames);
     } catch (error) {
       console.error("Error fetching custom games:", error);
@@ -460,6 +466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logicLua: DEFAULT_LOGIC_LUA,
         assets: {},
         chatHistory: [],
+        isDraft: true,
         isPublished: false,
       }).returning();
       
@@ -472,13 +479,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/custom-games/:id", async (req: Request, res: Response) => {
     try {
-      const { metadata, logicLua, assets, chatHistory, isPublished } = req.body;
+      const { metadata, logicLua, assets, chatHistory, isDraft, isPublished } = req.body;
       
       const updateData: Record<string, unknown> = { updatedAt: new Date() };
       if (metadata !== undefined) updateData.metadata = metadata;
       if (logicLua !== undefined) updateData.logicLua = logicLua;
       if (assets !== undefined) updateData.assets = assets;
       if (chatHistory !== undefined) updateData.chatHistory = chatHistory;
+      if (isDraft !== undefined) updateData.isDraft = isDraft;
       if (isPublished !== undefined) updateData.isPublished = isPublished;
       
       const [updatedGame] = await db.update(customGames)

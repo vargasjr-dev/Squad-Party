@@ -67,7 +67,7 @@ export default function GameStudioScreen() {
 
   const [activeTab, setActiveTab] = useState<TabType>("chat");
   const [game, setGame] = useState<CustomGame | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [codeTab, setCodeTab] = useState<"metadata" | "logic">("metadata");
@@ -76,15 +76,15 @@ export default function GameStudioScreen() {
   const gameId = route.params?.gameId;
 
   useEffect(() => {
-    loadGame();
+    if (gameId) {
+      loadGame(gameId);
+    }
   }, [gameId]);
 
-  const loadGame = async () => {
-    if (!gameId) return;
-    
+  const loadGame = async (id: string) => {
     try {
       setIsLoading(true);
-      const res = await apiRequest("GET", `/api/custom-games/${gameId}`);
+      const res = await apiRequest("GET", `/api/custom-games/${id}`);
       const gameData = await res.json();
       setGame(gameData);
     } catch (error) {
@@ -94,14 +94,44 @@ export default function GameStudioScreen() {
     }
   };
 
+  const createNewGame = async (): Promise<CustomGame | null> => {
+    if (!user) return null;
+    
+    try {
+      const newId = `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const res = await apiRequest("POST", "/api/custom-games", {
+        id: newId,
+        creatorId: user.id,
+        playlistId: null,
+      });
+      const newGame = await res.json();
+      return newGame;
+    } catch (error) {
+      console.error("Failed to create game:", error);
+      return null;
+    }
+  };
+
   const sendMessage = async () => {
-    if (!message.trim() || !game || !user || isSending) return;
+    if (!message.trim() || !user || isSending) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setIsSending(true);
 
     const userMessage = message.trim();
     setMessage("");
+
+    // Create a new game draft if one doesn't exist
+    let currentGame = game;
+    if (!currentGame) {
+      currentGame = await createNewGame();
+      if (!currentGame) {
+        setIsSending(false);
+        Alert.alert("Error", "Failed to create a new game. Please try again.");
+        return;
+      }
+      setGame(currentGame);
+    }
 
     const userChatMessage: ChatMessage = {
       id: `msg_${Date.now()}_user`,
@@ -111,21 +141,21 @@ export default function GameStudioScreen() {
     };
 
     // Update local state immediately for responsiveness
-    const updatedHistory = [...(game.chatHistory || []), userChatMessage];
+    const updatedHistory = [...(currentGame.chatHistory || []), userChatMessage];
     setGame((prev) => 
-      prev ? { ...prev, chatHistory: updatedHistory } : prev
+      prev ? { ...prev, chatHistory: updatedHistory } : { ...currentGame, chatHistory: updatedHistory }
     );
 
     try {
       // STEP 1: Save user message to database first (persist before calling Vellum)
-      await apiRequest("PUT", `/api/custom-games/${game.id}`, {
+      await apiRequest("PUT", `/api/custom-games/${currentGame.id}`, {
         chatHistory: updatedHistory,
       });
 
       // STEP 2: Call Vellum (non-streaming endpoint that buffers response)
       const response = await apiRequest("POST", "/api/vellum/chat", {
         userId: user.id,
-        gameId: game.id,
+        gameId: currentGame.id,
         message: userMessage,
       });
 
@@ -136,7 +166,7 @@ export default function GameStudioScreen() {
       }
 
       // STEP 3: Reload game to get updated state (Vellum may have updated artifacts)
-      await loadGame();
+      await loadGame(currentGame.id);
     } catch (error) {
       console.error("Failed to send message:", error);
       const errorMessage: ChatMessage = {
@@ -154,7 +184,7 @@ export default function GameStudioScreen() {
       
       // Save error message to database too
       try {
-        await apiRequest("PUT", `/api/custom-games/${game.id}`, {
+        await apiRequest("PUT", `/api/custom-games/${currentGame.id}`, {
           chatHistory: errorHistory,
         });
       } catch {
