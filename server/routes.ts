@@ -635,9 +635,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const vellumResult = await vellumResponse.json();
       console.log("[Vellum] Workflow result:", JSON.stringify(vellumResult, null, 2));
       
-      // Extract assistant response and execution ID from Vellum output
-      let assistantContent = "I've updated your game. Please check the preview.";
       const executionId = vellumResult.execution_id || null;
+      
+      // Check for workflow execution errors
+      if (vellumResult.state === "REJECTED" || vellumResult.state === "FAILED") {
+        const errorMessage = vellumResult.error?.message || "Workflow execution failed";
+        console.error("[Vellum] Workflow failed:", errorMessage);
+        return res.status(500).json({ 
+          error: `AI workflow failed: ${errorMessage}`,
+          executionId,
+          state: vellumResult.state
+        });
+      }
+      
+      // Extract assistant response from Vellum output
+      let assistantContent: string | null = null;
       
       if (vellumResult.data?.outputs) {
         const responseOutput = vellumResult.data.outputs.find(
@@ -646,6 +658,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (responseOutput?.value) {
           assistantContent = responseOutput.value;
         }
+      }
+      
+      // If we got no response from the workflow, treat it as an error
+      if (!assistantContent) {
+        console.error("[Vellum] No response output found in workflow result");
+        return res.status(500).json({ 
+          error: "AI did not return a response. Please try again.",
+          executionId,
+          workflowResult: vellumResult
+        });
       }
       
       console.log(`[Vellum] Execution ID: ${executionId}`);

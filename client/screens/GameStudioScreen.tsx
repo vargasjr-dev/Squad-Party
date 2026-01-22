@@ -153,26 +153,57 @@ export default function GameStudioScreen() {
       });
 
       // STEP 2: Call Vellum (non-streaming endpoint that buffers response)
-      const response = await apiRequest("POST", "/api/vellum/chat", {
-        userId: user.id,
-        gameId: currentGame.id,
-        message: userMessage,
-      });
+      const response = await fetch(
+        new URL("/api/vellum/chat", getApiUrl()).toString(),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.id,
+            gameId: currentGame.id,
+            message: userMessage,
+          }),
+        }
+      );
 
       const result = await response.json();
 
-      if (result.error) {
-        throw new Error(result.error);
+      if (!response.ok || result.error) {
+        // Create error message with executionId if available (so admin can debug)
+        const errorContent = result.error || `Request failed (${response.status})`;
+        const errorMessage: ChatMessage = {
+          id: `error_${Date.now()}`,
+          role: "assistant",
+          content: `Error: ${errorContent}`,
+          timestamp: Date.now(),
+          executionId: result.executionId || undefined,
+        };
+        
+        const errorHistory = [...updatedHistory, errorMessage];
+        setGame((prev) =>
+          prev ? { ...prev, chatHistory: errorHistory } : prev
+        );
+        
+        // Save error message to database
+        try {
+          await apiRequest("PUT", `/api/custom-games/${currentGame.id}`, {
+            chatHistory: errorHistory,
+          });
+        } catch {
+          // Ignore secondary error
+        }
+        return;
       }
 
       // STEP 3: Reload game to get updated state (Vellum may have updated artifacts)
       await loadGame(currentGame.id);
     } catch (error) {
       console.error("Failed to send message:", error);
+      const errorContent = error instanceof Error ? error.message : "Unknown error";
       const errorMessage: ChatMessage = {
         id: `error_${Date.now()}`,
         role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
+        content: `Error: Failed to connect to AI service. ${errorContent}`,
         timestamp: Date.now(),
       };
       
