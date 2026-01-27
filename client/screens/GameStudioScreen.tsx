@@ -180,7 +180,20 @@ export default function GameStudioScreen() {
 
       if (!response.ok || result.error) {
         // Create error message with executionId if available (so admin can debug)
-        const errorContent = result.error || `Request failed (${response.status})`;
+        const isAdmin = user?.isAdmin === true;
+        let errorContent = result.error || `Request failed (${response.status})`;
+        
+        // Show detailed error info to admins
+        if (isAdmin) {
+          const details: string[] = [];
+          if (result.state) details.push(`State: ${result.state}`);
+          if (result.executionId) details.push(`Execution: ${result.executionId}`);
+          if (result.details) details.push(`Details: ${result.details}`);
+          if (details.length > 0) {
+            errorContent = `${errorContent}\n\n[Admin Debug]\n${details.join('\n')}`;
+          }
+        }
+        
         const errorMessage: ChatMessage = {
           id: `error_${Date.now()}`,
           role: "assistant",
