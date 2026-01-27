@@ -17,7 +17,17 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import Animated, { FadeIn, FadeInDown, SlideInRight } from "react-native-reanimated";
+import Animated, { 
+  FadeIn, 
+  FadeInDown, 
+  SlideInRight,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  withDelay,
+} from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { scheduleOnRN } from "react-native-worklets";
 
@@ -233,6 +243,56 @@ export default function GameStudioScreen() {
     });
   };
 
+  const TypingIndicator = () => {
+    const dot1Opacity = useSharedValue(0.3);
+    const dot2Opacity = useSharedValue(0.3);
+    const dot3Opacity = useSharedValue(0.3);
+
+    React.useEffect(() => {
+      dot1Opacity.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 400 }),
+          withTiming(0.3, { duration: 400 })
+        ),
+        -1
+      );
+      dot2Opacity.value = withDelay(
+        200,
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: 400 }),
+            withTiming(0.3, { duration: 400 })
+          ),
+          -1
+        )
+      );
+      dot3Opacity.value = withDelay(
+        400,
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: 400 }),
+            withTiming(0.3, { duration: 400 })
+          ),
+          -1
+        )
+      );
+    }, []);
+
+    const dot1Style = useAnimatedStyle(() => ({ opacity: dot1Opacity.value }));
+    const dot2Style = useAnimatedStyle(() => ({ opacity: dot2Opacity.value }));
+    const dot3Style = useAnimatedStyle(() => ({ opacity: dot3Opacity.value }));
+
+    return (
+      <Animated.View entering={FadeInDown.springify()} style={styles.typingContainer}>
+        <View style={styles.typingBubble}>
+          <Animated.View style={[styles.typingDot, dot1Style]} />
+          <Animated.View style={[styles.typingDot, dot2Style]} />
+          <Animated.View style={[styles.typingDot, dot3Style]} />
+        </View>
+      </Animated.View>
+    );
+  };
+
   const renderChatMessage = ({ item }: { item: ChatMessage }) => {
     const isAdmin = user?.isAdmin === true;
     const hasExecutionId = item.role === "assistant" && item.executionId;
@@ -334,8 +394,9 @@ export default function GameStudioScreen() {
             </View>
           </View>
         }
+        ListFooterComponent={isSending ? <TypingIndicator /> : null}
         onContentSizeChange={() => {
-          if (game?.chatHistory?.length) {
+          if (game?.chatHistory?.length || isSending) {
             flatListRef.current?.scrollToEnd({ animated: true });
           }
         }}
@@ -787,5 +848,25 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === "web" ? "monospace" : undefined,
     color: Colors.dark.text,
     lineHeight: 22,
+  },
+  typingContainer: {
+    alignSelf: "flex-start",
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
+  },
+  typingBubble: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.dark.backgroundSecondary,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    gap: Spacing.xs,
+  },
+  typingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.dark.textSecondary,
   },
 });
