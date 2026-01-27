@@ -6,7 +6,6 @@ import {
   TextInput,
   Pressable,
   ActivityIndicator,
-  Keyboard,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -95,17 +94,12 @@ export default function LoginScreen() {
     transform: [{ scale: buttonScale.value }],
   }));
 
-  const dismissKeyboard = () => {
-    Keyboard.dismiss();
-  };
-
   return (
     <LinearGradient
       colors={[Colors.dark.backgroundRoot, Colors.dark.backgroundDefault]}
       style={styles.container}
     >
-      <Pressable style={styles.container} onPress={dismissKeyboard}>
-        <KeyboardAwareScrollViewCompat
+      <KeyboardAwareScrollViewCompat
           contentContainerStyle={[
             styles.content,
             {
@@ -220,7 +214,6 @@ export default function LoginScreen() {
             </ThemedText>
           </Animated.View>
         </KeyboardAwareScrollViewCompat>
-      </Pressable>
     </LinearGradient>
   );
 }
