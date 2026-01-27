@@ -17,6 +17,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as Clipboard from "expo-clipboard";
 import Animated, { 
   FadeIn, 
   FadeInDown, 
@@ -306,6 +307,11 @@ export default function GameStudioScreen() {
     );
   };
 
+  const copyVellumLink = async (executionId: string) => {
+    const url = `https://app.vellum.ai/workflows/executions/${executionId}`;
+    await Clipboard.setStringAsync(url);
+  };
+
   const renderChatMessage = ({ item }: { item: ChatMessage }) => {
     const isAdmin = user?.isAdmin === true;
     const hasExecutionId = item.role === "assistant" && item.executionId;
@@ -318,6 +324,17 @@ export default function GameStudioScreen() {
           scheduleOnRN(openVellumExecution, item.executionId);
         }
       });
+
+    const longPressGesture = Gesture.LongPress()
+      .minDuration(500)
+      .onEnd(() => {
+        if (isAdmin && hasExecutionId && item.executionId) {
+          scheduleOnRN(Haptics.notificationAsync, Haptics.NotificationFeedbackType.Success);
+          scheduleOnRN(copyVellumLink, item.executionId);
+        }
+      });
+
+    const combinedGesture = Gesture.Race(tripleTapGesture, longPressGesture);
 
     const messageContent = (
       <Animated.View
@@ -344,7 +361,7 @@ export default function GameStudioScreen() {
 
     if (isAdmin && hasExecutionId) {
       return (
-        <GestureDetector gesture={tripleTapGesture}>
+        <GestureDetector gesture={combinedGesture}>
           {messageContent}
         </GestureDetector>
       );
