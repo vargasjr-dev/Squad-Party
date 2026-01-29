@@ -605,7 +605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Call Vellum execute-workflow endpoint (non-streaming)
       const vellumResponse = await fetch(
-        `https://api.vellum.ai/v1/execute-workflow`,
+        `https://predict.vellum.ai/v1/execute-workflow`,
         {
           method: "POST",
           headers: {
