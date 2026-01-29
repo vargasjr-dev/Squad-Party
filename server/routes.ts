@@ -617,7 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             inputs: [
               { name: "user_id", type: "STRING", value: userId },
               { name: "game_id", type: "STRING", value: gameId },
-              { name: "user_message", type: "STRING", value: message },
+              { name: "message", type: "STRING", value: message },
             ],
           }),
         }
