@@ -595,7 +595,16 @@ export default function GameStudioScreen() {
         </View>
 
         <View style={styles.previewActions}>
-          <Pressable style={styles.testButton}>
+          <Pressable 
+            style={[styles.testButton, !game?.logicLua && styles.testButtonDisabled]}
+            onPress={() => {
+              if (game?.id && game?.logicLua) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                navigation.navigate("SoloGamePlay", { gameId: game.id });
+              }
+            }}
+            disabled={!game?.logicLua}
+          >
             <Feather name="play" size={18} color={Colors.dark.text} />
             <ThemedText type="body" style={styles.testButtonText}>
               Test Game
@@ -929,6 +938,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.full,
+  },
+  testButtonDisabled: {
+    opacity: 0.5,
   },
   testButtonText: {
     fontWeight: "600",

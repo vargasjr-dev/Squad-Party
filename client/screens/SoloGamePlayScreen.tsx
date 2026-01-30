@@ -4,6 +4,7 @@ import {
   StyleSheet,
   TextInput,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -26,6 +27,20 @@ import { useTheme } from "@/hooks/useTheme";
 import { useGame } from "@/contexts/GameContext";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { getApiUrl } from "@/lib/query-client";
+
+interface CustomGameData {
+  id: string;
+  metadata: {
+    name: string;
+    description: string;
+    type: string;
+    duration: number;
+    rules: string[];
+  };
+  logicLua: string;
+  assets: Record<string, string>;
+}
 
 const WORD_SCRAMBLE_WORDS = [
   { word: "PARTY", scrambled: "YRPTA" },
@@ -52,7 +67,36 @@ export default function SoloGamePlayScreen() {
   const route = useRoute<RouteProp<RootStackParamList, "SoloGamePlay">>();
   const { miniGames } = useGame();
 
-  const game = miniGames.find((g) => g.id === route.params.gameId);
+  const builtInGame = miniGames.find((g) => g.id === route.params.gameId);
+  const [customGame, setCustomGame] = useState<CustomGameData | null>(null);
+  const [isLoadingCustomGame, setIsLoadingCustomGame] = useState(false);
+
+  const game = builtInGame || (customGame ? {
+    id: customGame.id,
+    name: customGame.metadata.name,
+    description: customGame.metadata.description,
+    type: customGame.metadata.type as "word" | "trivia" | "speed" | "memory",
+    duration: customGame.metadata.duration,
+    rules: customGame.metadata.rules,
+    icon: "zap" as const,
+    color: Colors.dark.primary,
+  } : null);
+
+  useEffect(() => {
+    if (!builtInGame && route.params.gameId) {
+      setIsLoadingCustomGame(true);
+      fetch(new URL(`/api/games/${route.params.gameId}/artifacts`, getApiUrl()).toString())
+        .then(res => res.json())
+        .then(data => {
+          setCustomGame(data);
+          setIsLoadingCustomGame(false);
+        })
+        .catch(err => {
+          console.error("Failed to load custom game:", err);
+          setIsLoadingCustomGame(false);
+        });
+    }
+  }, [builtInGame, route.params.gameId]);
 
   const [timeLeft, setTimeLeft] = useState(game?.duration || 60);
   const [score, setScore] = useState(0);
@@ -131,10 +175,28 @@ export default function SoloGamePlayScreen() {
     width: `${progressWidth.value}%`,
   }));
 
+  useEffect(() => {
+    if (game?.duration && timeLeft === 60 && game.duration !== 60) {
+      setTimeLeft(game.duration);
+    }
+  }, [game?.duration]);
+
+  if (isLoadingCustomGame) {
+    return (
+      <View style={[styles.container, styles.centerContainer, { backgroundColor: theme.backgroundRoot }]}>
+        <ActivityIndicator size="large" color={Colors.dark.primary} />
+        <ThemedText type="body" style={{ marginTop: Spacing.lg }}>Loading game...</ThemedText>
+      </View>
+    );
+  }
+
   if (!game) {
     return (
       <View style={[styles.container, styles.centerContainer, { backgroundColor: theme.backgroundRoot }]}>
         <ThemedText type="body">Game not found</ThemedText>
+        <Pressable onPress={() => navigation.goBack()} style={{ marginTop: Spacing.lg }}>
+          <ThemedText type="body" style={{ color: Colors.dark.primary }}>Go Back</ThemedText>
+        </Pressable>
       </View>
     );
   }
