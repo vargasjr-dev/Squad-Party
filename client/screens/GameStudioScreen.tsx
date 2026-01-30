@@ -352,7 +352,7 @@ export default function GameStudioScreen() {
               : { backgroundColor: Colors.dark.backgroundSecondary },
           ]}
         >
-          <ThemedText type="body" style={styles.messageText}>
+          <ThemedText type="body" style={styles.messageText} selectable>
             {item.content}
           </ThemedText>
         </View>
