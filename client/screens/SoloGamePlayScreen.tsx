@@ -28,6 +28,7 @@ import { useGame } from "@/contexts/GameContext";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { getApiUrl } from "@/lib/query-client";
+import { createGameRunner, LuaGameInterface, GameState } from "@/lib/luaInterpreter";
 
 interface CustomGameData {
   id: string;
@@ -70,6 +71,9 @@ export default function SoloGamePlayScreen() {
   const builtInGame = miniGames.find((g) => g.id === route.params.gameId);
   const [customGame, setCustomGame] = useState<CustomGameData | null>(null);
   const [isLoadingCustomGame, setIsLoadingCustomGame] = useState(false);
+  const [luaRunner, setLuaRunner] = useState<LuaGameInterface | null>(null);
+  const [luaGameState, setLuaGameState] = useState<GameState | null>(null);
+  const [luaError, setLuaError] = useState<string | null>(null);
 
   const game = builtInGame || (customGame ? {
     id: customGame.id,
@@ -82,6 +86,8 @@ export default function SoloGamePlayScreen() {
     color: Colors.dark.primary,
   } : null);
 
+  const isCustomGame = !builtInGame && customGame !== null;
+
   useEffect(() => {
     if (!builtInGame && route.params.gameId) {
       setIsLoadingCustomGame(true);
@@ -89,6 +95,25 @@ export default function SoloGamePlayScreen() {
         .then(res => res.json())
         .then(data => {
           setCustomGame(data);
+          
+          if (data.logicLua) {
+            try {
+              const runner = createGameRunner(data.logicLua);
+              if (runner) {
+                setLuaRunner(runner);
+                const initialState = runner.init();
+                const startedState = runner.start(initialState);
+                const withChallenge = runner.getNextChallenge(startedState);
+                setLuaGameState(withChallenge);
+              } else {
+                setLuaError("Failed to initialize game logic");
+              }
+            } catch (err) {
+              console.error("Lua error:", err);
+              setLuaError("Error running game logic");
+            }
+          }
+          
           setIsLoadingCustomGame(false);
         })
         .catch(err => {
@@ -129,6 +154,32 @@ export default function SoloGamePlayScreen() {
   const handleSubmit = useCallback(() => {
     if (isGameOver) return;
 
+    if (isCustomGame && luaRunner && luaGameState) {
+      try {
+        const result = luaRunner.onInput(luaGameState, input);
+        if (result.correct) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          setScore((prev) => prev + result.points);
+          setCorrectWords((prev) => prev + 1);
+          const nextState = luaRunner.getNextChallenge(result.state);
+          setLuaGameState(nextState);
+          setInput("");
+        } else {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          setLuaGameState(result.state);
+          shakeValue.value = withSequence(
+            withSpring(-10),
+            withSpring(10),
+            withSpring(-10),
+            withSpring(0)
+          );
+        }
+      } catch (err) {
+        console.error("Lua onInput error:", err);
+      }
+      return;
+    }
+
     const isCorrect = game?.type === "speed"
       ? input.toLowerCase() === currentTypingWord.toLowerCase()
       : input.toUpperCase() === currentWord.word;
@@ -149,7 +200,7 @@ export default function SoloGamePlayScreen() {
         withSpring(0)
       );
     }
-  }, [input, currentWord, currentTypingWord, isGameOver, game?.type]);
+  }, [input, currentWord, currentTypingWord, isGameOver, game?.type, isCustomGame, luaRunner, luaGameState]);
 
   const handlePlayAgain = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -160,6 +211,17 @@ export default function SoloGamePlayScreen() {
     setIsGameOver(false);
     setCorrectWords(0);
     progressWidth.value = 100;
+    
+    if (isCustomGame && luaRunner) {
+      try {
+        const initialState = luaRunner.init();
+        const startedState = luaRunner.start(initialState);
+        const withChallenge = luaRunner.getNextChallenge(startedState);
+        setLuaGameState(withChallenge);
+      } catch (err) {
+        console.error("Lua restart error:", err);
+      }
+    }
   };
 
   const handleExit = () => {
@@ -195,6 +257,21 @@ export default function SoloGamePlayScreen() {
       <View style={[styles.container, styles.centerContainer, { backgroundColor: theme.backgroundRoot }]}>
         <ThemedText type="body">Game not found</ThemedText>
         <Pressable onPress={() => navigation.goBack()} style={{ marginTop: Spacing.lg }}>
+          <ThemedText type="body" style={{ color: Colors.dark.primary }}>Go Back</ThemedText>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (luaError) {
+    return (
+      <View style={[styles.container, styles.centerContainer, { backgroundColor: theme.backgroundRoot }]}>
+        <Feather name="alert-circle" size={48} color={Colors.dark.error} />
+        <ThemedText type="h4" style={{ marginTop: Spacing.lg, textAlign: "center" }}>Game Error</ThemedText>
+        <ThemedText type="body" style={{ marginTop: Spacing.sm, color: Colors.dark.textSecondary, textAlign: "center" }}>
+          {luaError}
+        </ThemedText>
+        <Pressable onPress={() => navigation.goBack()} style={{ marginTop: Spacing.xl }}>
           <ThemedText type="body" style={{ color: Colors.dark.primary }}>Go Back</ThemedText>
         </Pressable>
       </View>
@@ -275,12 +352,30 @@ export default function SoloGamePlayScreen() {
 
       <View style={styles.gameArea}>
         <Animated.View entering={FadeInDown.springify()} style={styles.wordContainer}>
-          <ThemedText type="caption" style={styles.instruction}>
-            {game.type === "speed" ? "Type this word:" : "Unscramble:"}
-          </ThemedText>
-          <ThemedText type="h1" style={styles.scrambledWord}>
-            {game.type === "speed" ? currentTypingWord : currentWord.scrambled}
-          </ThemedText>
+          {isCustomGame && luaGameState ? (
+            <>
+              <ThemedText type="caption" style={styles.instruction}>
+                {luaGameState.currentChallenge ? "Your challenge:" : "Loading..."}
+              </ThemedText>
+              <ThemedText type="h1" style={styles.scrambledWord}>
+                {luaGameState.currentChallenge || "..."}
+              </ThemedText>
+              {luaGameState.wrongGuesses > 0 && luaGameState.maxWrongGuesses > 0 ? (
+                <ThemedText type="caption" style={styles.wrongGuessInfo}>
+                  Wrong: {luaGameState.wrongGuesses} / {luaGameState.maxWrongGuesses}
+                </ThemedText>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <ThemedText type="caption" style={styles.instruction}>
+                {game.type === "speed" ? "Type this word:" : "Unscramble:"}
+              </ThemedText>
+              <ThemedText type="h1" style={styles.scrambledWord}>
+                {game.type === "speed" ? currentTypingWord : currentWord.scrambled}
+              </ThemedText>
+            </>
+          )}
         </Animated.View>
 
         <Animated.View style={[styles.inputContainer, inputAnimatedStyle]}>
@@ -288,9 +383,9 @@ export default function SoloGamePlayScreen() {
             style={styles.input}
             value={input}
             onChangeText={setInput}
-            placeholder="Type your answer..."
+            placeholder={isCustomGame ? "Enter your guess..." : "Type your answer..."}
             placeholderTextColor={Colors.dark.textSecondary}
-            autoCapitalize={game.type === "speed" ? "none" : "characters"}
+            autoCapitalize={isCustomGame ? "characters" : (game.type === "speed" ? "none" : "characters")}
             autoCorrect={false}
             returnKeyType="done"
             onSubmitEditing={handleSubmit}
@@ -392,6 +487,11 @@ const styles = StyleSheet.create({
     color: Colors.dark.secondary,
     fontSize: 48,
     letterSpacing: 8,
+    textAlign: "center",
+  },
+  wrongGuessInfo: {
+    color: Colors.dark.error,
+    marginTop: Spacing.sm,
     textAlign: "center",
   },
   inputContainer: {
