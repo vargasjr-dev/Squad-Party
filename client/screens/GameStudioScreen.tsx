@@ -93,6 +93,14 @@ export default function GameStudioScreen() {
     }
   }, [gameId]);
 
+  useEffect(() => {
+    if (game?.chatHistory?.length) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: false });
+      }, 100);
+    }
+  }, [game?.id]);
+
   const loadGame = async (id: string) => {
     try {
       setIsLoading(true);
