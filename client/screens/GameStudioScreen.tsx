@@ -31,6 +31,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { scheduleOnRN } from "react-native-worklets";
+import Markdown from "react-native-markdown-display";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -312,6 +313,92 @@ export default function GameStudioScreen() {
     await Clipboard.setStringAsync(url);
   };
 
+  const markdownStyles = {
+    body: {
+      color: Colors.dark.text,
+      fontSize: 16,
+      lineHeight: 24,
+    },
+    heading1: {
+      color: Colors.dark.text,
+      fontSize: 24,
+      fontWeight: "700" as const,
+      marginTop: Spacing.md,
+      marginBottom: Spacing.sm,
+    },
+    heading2: {
+      color: Colors.dark.text,
+      fontSize: 20,
+      fontWeight: "700" as const,
+      marginTop: Spacing.md,
+      marginBottom: Spacing.sm,
+    },
+    heading3: {
+      color: Colors.dark.text,
+      fontSize: 18,
+      fontWeight: "600" as const,
+      marginTop: Spacing.sm,
+      marginBottom: Spacing.xs,
+    },
+    strong: {
+      fontWeight: "700" as const,
+      color: Colors.dark.text,
+    },
+    em: {
+      fontStyle: "italic" as const,
+    },
+    bullet_list: {
+      marginVertical: Spacing.xs,
+    },
+    ordered_list: {
+      marginVertical: Spacing.xs,
+    },
+    list_item: {
+      marginVertical: 2,
+    },
+    table: {
+      borderWidth: 1,
+      borderColor: Colors.dark.textSecondary,
+      borderRadius: BorderRadius.sm,
+      marginVertical: Spacing.sm,
+    },
+    th: {
+      backgroundColor: Colors.dark.backgroundRoot,
+      padding: Spacing.sm,
+      borderBottomWidth: 1,
+      borderColor: Colors.dark.textSecondary,
+    },
+    td: {
+      padding: Spacing.sm,
+      borderBottomWidth: 1,
+      borderColor: Colors.dark.backgroundSecondary,
+    },
+    code_inline: {
+      backgroundColor: Colors.dark.backgroundRoot,
+      color: Colors.dark.secondary,
+      paddingHorizontal: 4,
+      paddingVertical: 2,
+      borderRadius: 4,
+      fontFamily: Platform.OS === "web" ? "monospace" : undefined,
+    },
+    fence: {
+      backgroundColor: Colors.dark.backgroundRoot,
+      padding: Spacing.md,
+      borderRadius: BorderRadius.sm,
+      marginVertical: Spacing.sm,
+    },
+    code_block: {
+      fontFamily: Platform.OS === "web" ? "monospace" : undefined,
+      color: Colors.dark.text,
+    },
+    link: {
+      color: Colors.dark.primary,
+    },
+    paragraph: {
+      marginVertical: Spacing.xs,
+    },
+  };
+
   const renderChatMessage = ({ item }: { item: ChatMessage }) => {
     const isAdmin = user?.isAdmin === true;
     const hasExecutionId = item.role === "assistant" && item.executionId;
@@ -352,9 +439,13 @@ export default function GameStudioScreen() {
               : { backgroundColor: Colors.dark.backgroundSecondary },
           ]}
         >
-          <ThemedText type="body" style={styles.messageText} selectable>
-            {item.content}
-          </ThemedText>
+          {item.role === "assistant" ? (
+            <Markdown style={markdownStyles}>{item.content}</Markdown>
+          ) : (
+            <ThemedText type="body" style={styles.messageText} selectable>
+              {item.content}
+            </ThemedText>
+          )}
         </View>
       </Animated.View>
     );
