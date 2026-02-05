@@ -9,6 +9,11 @@ dist/
 web-build/
 expo-env.d.ts
 
+# Next.js
+.next/
+out/
+next-env.d.ts
+
 # Native
 .kotlin/
 *.orig.*
