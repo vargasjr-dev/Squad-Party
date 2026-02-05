@@ -32,6 +32,8 @@ jobs:
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
+          # Get token from: https://expo.dev/accounts/[account]/settings/access-tokens
+          # Create a new token, then add as repo secret: Settings > Secrets > Actions
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install dependencies
@@ -39,30 +41,3 @@ jobs:
 
       - name: Publish update
         run: eas update --branch main --message "${{ github.event.head_commit.message }}"
-
-  notify:
-    name: Notify on Telegram
-    runs-on: ubuntu-latest
-    needs: publish
-    if: always()
-    steps:
-      - name: Send notification
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          if [ "${{ needs.publish.result }}" == "success" ]; then
-            STATUS="✅ Published"
-          else
-            STATUS="❌ Failed"
-          fi
-          
-          MSG="📱 *Expo Update* ${STATUS}
-
-          Branch: main
-          Commit: ${{ github.event.head_commit.message }}"
-          
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-            -d chat_id="${TELEGRAM_CHAT_ID}" \
-            -d text="${MSG}" \
-            -d parse_mode="Markdown" || true
