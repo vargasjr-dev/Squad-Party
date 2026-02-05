@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  StyleSheet,
-  TextInput,
-  Pressable,
-  Image,
-} from "react-native";
+import { View, StyleSheet, TextInput, Pressable, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -28,9 +22,21 @@ import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 const SAMPLE_WORDS = [
-  "PARTY", "SQUAD", "GAMES", "QUICK", "BLAST",
-  "FLASH", "STORM", "CROWN", "CHAMP", "GLORY",
-  "SWIFT", "BRAVE", "POWER", "BONUS", "TURBO",
+  "PARTY",
+  "SQUAD",
+  "GAMES",
+  "QUICK",
+  "BLAST",
+  "FLASH",
+  "STORM",
+  "CROWN",
+  "CHAMP",
+  "GLORY",
+  "SWIFT",
+  "BRAVE",
+  "POWER",
+  "BONUS",
+  "TURBO",
 ];
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -38,7 +44,8 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export default function GamePlayScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "GamePlay">>();
   const { currentSession, miniGames, playlists, endGame } = useGame();
 
@@ -153,7 +160,11 @@ export default function GamePlayScreen() {
 
       <View style={styles.timerBar}>
         <Animated.View
-          style={[styles.timerProgress, { backgroundColor: timerColor }, timerAnimatedStyle]}
+          style={[
+            styles.timerProgress,
+            { backgroundColor: timerColor },
+            timerAnimatedStyle,
+          ]}
         />
       </View>
 
@@ -185,7 +196,11 @@ export default function GamePlayScreen() {
               onPress={handleSkip}
               testID="button-skip"
             >
-              <Feather name="skip-forward" size={20} color={Colors.dark.textSecondary} />
+              <Feather
+                name="skip-forward"
+                size={20}
+                color={Colors.dark.textSecondary}
+              />
               <ThemedText type="small" style={styles.skipButtonText}>
                 Skip
               </ThemedText>
@@ -194,7 +209,8 @@ export default function GamePlayScreen() {
             <AnimatedPressable
               style={[
                 styles.submitButton,
-                userInput.length !== currentWord.length && styles.submitButtonDisabled,
+                userInput.length !== currentWord.length &&
+                  styles.submitButtonDisabled,
               ]}
               onPress={handleSubmit}
               disabled={userInput.length !== currentWord.length}
@@ -210,7 +226,11 @@ export default function GamePlayScreen() {
 
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Feather name="check-circle" size={16} color={Colors.dark.success} />
+            <Feather
+              name="check-circle"
+              size={16}
+              color={Colors.dark.success}
+            />
             <ThemedText type="small" style={styles.statText}>
               {wordsCompleted} completed
             </ThemedText>

@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiRequest } from "@/lib/query-client";
 
@@ -56,10 +62,19 @@ interface GameContextType {
   playlists: Playlist[];
   sessions: Session[];
   currentSession: Session | null;
-  createPlaylist: (name: string, description: string, gameIds: string[], creatorId: string) => Promise<Playlist>;
+  createPlaylist: (
+    name: string,
+    description: string,
+    gameIds: string[],
+    creatorId: string,
+  ) => Promise<Playlist>;
   updatePlaylist: (id: string, updates: Partial<Playlist>) => Promise<void>;
   deletePlaylist: (id: string) => Promise<void>;
-  createSession: (playlistId: string, isPublic: boolean, host: HostInfo) => Promise<Session>;
+  createSession: (
+    playlistId: string,
+    isPublic: boolean,
+    host: HostInfo,
+  ) => Promise<Session>;
   joinSession: (sessionId: string, player: SessionPlayer) => Promise<void>;
   leaveSession: () => Promise<void>;
   startGame: () => Promise<void>;
@@ -109,7 +124,8 @@ const DEFAULT_GAMES: MiniGame[] = [
   {
     id: "word_chain",
     name: "Word Chain",
-    description: "Create words starting with the last letter of the previous word!",
+    description:
+      "Create words starting with the last letter of the previous word!",
     type: "word",
     duration: 60,
     isDefault: true,
@@ -183,7 +199,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("GET", `/api/playlists?userId=${userId}`);
       const serverPlaylists = await res.json();
       setPlaylists(serverPlaylists);
-      await AsyncStorage.setItem(PLAYLISTS_KEY, JSON.stringify(serverPlaylists));
+      await AsyncStorage.setItem(
+        PLAYLISTS_KEY,
+        JSON.stringify(serverPlaylists),
+      );
     } catch (error) {
       console.log("Could not load playlists from server, using local:", error);
       const stored = await AsyncStorage.getItem(PLAYLISTS_KEY);
@@ -207,7 +226,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     loadSessions();
   }, []);
 
-  const createPlaylist = async (name: string, description: string, gameIds: string[], creatorId: string) => {
+  const createPlaylist = async (
+    name: string,
+    description: string,
+    gameIds: string[],
+    creatorId: string,
+  ) => {
     const newPlaylist: Playlist = {
       id: `playlist_${Date.now()}`,
       name,
@@ -217,7 +241,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       isPublic: false,
       playCount: 0,
     };
-    
+
     try {
       const res = await apiRequest("POST", "/api/playlists", newPlaylist);
       const serverPlaylist = await res.json();
@@ -237,15 +261,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const updatePlaylist = async (id: string, updates: Partial<Playlist>) => {
     const playlist = playlists.find((p) => p.id === id);
     if (!playlist) return;
-    
+
     const updatedPlaylist = { ...playlist, ...updates };
-    
+
     try {
       await apiRequest("PUT", `/api/playlists/${id}`, updatedPlaylist);
     } catch (error) {
       console.error("Failed to sync playlist update:", error);
     }
-    
+
     const updated = playlists.map((p) => (p.id === id ? updatedPlaylist : p));
     setPlaylists(updated);
     await AsyncStorage.setItem(PLAYLISTS_KEY, JSON.stringify(updated));
@@ -257,13 +281,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Failed to delete playlist from server:", error);
     }
-    
+
     const updated = playlists.filter((p) => p.id !== id);
     setPlaylists(updated);
     await AsyncStorage.setItem(PLAYLISTS_KEY, JSON.stringify(updated));
   };
 
-  const createSession = async (playlistId: string, isPublic: boolean, host: HostInfo) => {
+  const createSession = async (
+    playlistId: string,
+    isPublic: boolean,
+    host: HostInfo,
+  ) => {
     const playlist = playlists.find((p) => p.id === playlistId);
     const hostPlayer: SessionPlayer = {
       id: host.id,
@@ -284,7 +312,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       currentGameIndex: 0,
       isPublic,
     };
-    
+
     try {
       const res = await apiRequest("POST", "/api/sessions", newSession);
       const serverSession = await res.json();
@@ -308,14 +336,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
         ...session,
         players: [...session.players, player],
       };
-      
+
       try {
         await apiRequest("PUT", `/api/sessions/${sessionId}`, updatedSession);
       } catch (error) {
         console.error("Failed to update session on server:", error);
       }
-      
-      const updated = sessions.map((s) => (s.id === sessionId ? updatedSession : s));
+
+      const updated = sessions.map((s) =>
+        s.id === sessionId ? updatedSession : s,
+      );
       setSessions(updated);
       setCurrentSession(updatedSession);
     }
@@ -328,7 +358,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error("Failed to delete session from server:", error);
       }
-      
+
       const updated = sessions.filter((s) => s.id !== currentSession.id);
       setSessions(updated);
       setCurrentSession(null);
@@ -338,14 +368,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const startGame = async () => {
     if (currentSession) {
       const updatedSession = { ...currentSession, status: "playing" as const };
-      
+
       try {
-        await apiRequest("PUT", `/api/sessions/${currentSession.id}`, updatedSession);
+        await apiRequest(
+          "PUT",
+          `/api/sessions/${currentSession.id}`,
+          updatedSession,
+        );
       } catch (error) {
         console.error("Failed to update session on server:", error);
       }
-      
-      const updated = sessions.map((s) => (s.id === currentSession.id ? updatedSession : s));
+
+      const updated = sessions.map((s) =>
+        s.id === currentSession.id ? updatedSession : s,
+      );
       setSessions(updated);
       setCurrentSession(updatedSession);
     }
@@ -362,14 +398,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
         players: updatedPlayers,
         currentGameIndex: currentSession.currentGameIndex + 1,
       };
-      
+
       try {
-        await apiRequest("PUT", `/api/sessions/${currentSession.id}`, updatedSession);
+        await apiRequest(
+          "PUT",
+          `/api/sessions/${currentSession.id}`,
+          updatedSession,
+        );
       } catch (error) {
         console.error("Failed to update session on server:", error);
       }
-      
-      const updated = sessions.map((s) => (s.id === currentSession.id ? updatedSession : s));
+
+      const updated = sessions.map((s) =>
+        s.id === currentSession.id ? updatedSession : s,
+      );
       setSessions(updated);
       setCurrentSession(updatedSession);
     }

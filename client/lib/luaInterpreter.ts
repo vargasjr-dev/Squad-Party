@@ -17,7 +17,10 @@ export interface GameState {
 export interface LuaGameInterface {
   init: () => GameState;
   start: (state: GameState) => GameState;
-  onInput: (state: GameState, input: string) => { state: GameState; correct: boolean; points: number };
+  onInput: (
+    state: GameState,
+    input: string,
+  ) => { state: GameState; correct: boolean; points: number };
   getNextChallenge: (state: GameState) => GameState;
   getHint?: (state: GameState) => string;
 }
@@ -33,7 +36,10 @@ export class LuaInterpreter {
 
   loadScript(luaCode: string): boolean {
     try {
-      const status = lauxlib.luaL_dostring(this.L, fengari.to_luastring(luaCode));
+      const status = lauxlib.luaL_dostring(
+        this.L,
+        fengari.to_luastring(luaCode),
+      );
       if (status !== lua.LUA_OK) {
         const errorMsg = lua.lua_tojsstring(this.L, -1);
         console.error("Lua load error:", errorMsg);
@@ -56,9 +62,9 @@ export class LuaInterpreter {
 
     try {
       const parts = funcPath.split(".");
-      
+
       lua.lua_getglobal(this.L, fengari.to_luastring(parts[0]));
-      
+
       for (let i = 1; i < parts.length; i++) {
         if (lua.lua_isnil(this.L, -1)) {
           console.error(`Lua: ${parts.slice(0, i).join(".")} is nil`);
@@ -117,7 +123,7 @@ export class LuaInterpreter {
 
   private getValue(index: number): any {
     const type = lua.lua_type(this.L, index);
-    
+
     switch (type) {
       case lua.LUA_TNIL:
         return null;
@@ -143,7 +149,7 @@ export class LuaInterpreter {
     while (lua.lua_next(this.L, index < 0 ? index - 1 : index) !== 0) {
       const keyType = lua.lua_type(this.L, -2);
       let key: string | number;
-      
+
       if (keyType === lua.LUA_TNUMBER) {
         key = lua.lua_tonumber(this.L, -2);
         if (key !== arrayIndex) {
@@ -154,7 +160,7 @@ export class LuaInterpreter {
         key = lua.lua_tojsstring(this.L, -2);
         isArray = false;
       }
-      
+
       result[key] = this.getValue(-1);
       lua.lua_pop(this.L, 1);
     }
@@ -175,7 +181,7 @@ export class LuaInterpreter {
 
 export function createGameRunner(luaCode: string): LuaGameInterface | null {
   const interpreter = new LuaInterpreter();
-  
+
   if (!interpreter.loadScript(luaCode)) {
     interpreter.destroy();
     return null;

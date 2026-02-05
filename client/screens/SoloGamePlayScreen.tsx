@@ -28,7 +28,11 @@ import { useGame } from "@/contexts/GameContext";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { getApiUrl } from "@/lib/query-client";
-import { createGameRunner, LuaGameInterface, GameState } from "@/lib/luaInterpreter";
+import {
+  createGameRunner,
+  LuaGameInterface,
+  GameState,
+} from "@/lib/luaInterpreter";
 
 interface CustomGameData {
   id: string;
@@ -57,14 +61,25 @@ const WORD_SCRAMBLE_WORDS = [
 ];
 
 const SPEED_TYPING_WORDS = [
-  "quick", "brown", "fox", "jumps", "lazy", "dog",
-  "party", "game", "squad", "friend", "player", "winner",
+  "quick",
+  "brown",
+  "fox",
+  "jumps",
+  "lazy",
+  "dog",
+  "party",
+  "game",
+  "squad",
+  "friend",
+  "player",
+  "winner",
 ];
 
 export default function SoloGamePlayScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "SoloGamePlay">>();
   const { miniGames } = useGame();
 
@@ -75,27 +90,40 @@ export default function SoloGamePlayScreen() {
   const [luaGameState, setLuaGameState] = useState<GameState | null>(null);
   const [luaError, setLuaError] = useState<string | null>(null);
 
-  const game = builtInGame || (customGame ? {
-    id: customGame.id,
-    name: customGame.metadata.name,
-    description: customGame.metadata.description,
-    type: customGame.metadata.type as "word" | "trivia" | "speed" | "memory",
-    duration: customGame.metadata.duration,
-    rules: customGame.metadata.rules,
-    icon: "zap" as const,
-    color: Colors.dark.primary,
-  } : null);
+  const game =
+    builtInGame ||
+    (customGame
+      ? {
+          id: customGame.id,
+          name: customGame.metadata.name,
+          description: customGame.metadata.description,
+          type: customGame.metadata.type as
+            | "word"
+            | "trivia"
+            | "speed"
+            | "memory",
+          duration: customGame.metadata.duration,
+          rules: customGame.metadata.rules,
+          icon: "zap" as const,
+          color: Colors.dark.primary,
+        }
+      : null);
 
   const isCustomGame = !builtInGame && customGame !== null;
 
   useEffect(() => {
     if (!builtInGame && route.params.gameId) {
       setIsLoadingCustomGame(true);
-      fetch(new URL(`/api/games/${route.params.gameId}/artifacts`, getApiUrl()).toString())
-        .then(res => res.json())
-        .then(data => {
+      fetch(
+        new URL(
+          `/api/games/${route.params.gameId}/artifacts`,
+          getApiUrl(),
+        ).toString(),
+      )
+        .then((res) => res.json())
+        .then((data) => {
           setCustomGame(data);
-          
+
           if (data.logicLua) {
             try {
               const runner = createGameRunner(data.logicLua);
@@ -113,10 +141,10 @@ export default function SoloGamePlayScreen() {
               setLuaError("Error running game logic");
             }
           }
-          
+
           setIsLoadingCustomGame(false);
         })
-        .catch(err => {
+        .catch((err) => {
           console.error("Failed to load custom game:", err);
           setIsLoadingCustomGame(false);
         });
@@ -133,8 +161,10 @@ export default function SoloGamePlayScreen() {
   const shakeValue = useSharedValue(0);
   const progressWidth = useSharedValue(100);
 
-  const currentWord = WORD_SCRAMBLE_WORDS[currentWordIndex % WORD_SCRAMBLE_WORDS.length];
-  const currentTypingWord = SPEED_TYPING_WORDS[currentWordIndex % SPEED_TYPING_WORDS.length];
+  const currentWord =
+    WORD_SCRAMBLE_WORDS[currentWordIndex % WORD_SCRAMBLE_WORDS.length];
+  const currentTypingWord =
+    SPEED_TYPING_WORDS[currentWordIndex % SPEED_TYPING_WORDS.length];
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -145,7 +175,9 @@ export default function SoloGamePlayScreen() {
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => prev - 1);
-      progressWidth.value = withSpring(((timeLeft - 1) / (game?.duration || 60)) * 100);
+      progressWidth.value = withSpring(
+        ((timeLeft - 1) / (game?.duration || 60)) * 100,
+      );
     }, 1000);
 
     return () => clearInterval(timer);
@@ -171,7 +203,7 @@ export default function SoloGamePlayScreen() {
             withSpring(-10),
             withSpring(10),
             withSpring(-10),
-            withSpring(0)
+            withSpring(0),
           );
         }
       } catch (err) {
@@ -180,9 +212,10 @@ export default function SoloGamePlayScreen() {
       return;
     }
 
-    const isCorrect = game?.type === "speed"
-      ? input.toLowerCase() === currentTypingWord.toLowerCase()
-      : input.toUpperCase() === currentWord.word;
+    const isCorrect =
+      game?.type === "speed"
+        ? input.toLowerCase() === currentTypingWord.toLowerCase()
+        : input.toUpperCase() === currentWord.word;
 
     if (isCorrect) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -197,10 +230,19 @@ export default function SoloGamePlayScreen() {
         withSpring(-10),
         withSpring(10),
         withSpring(-10),
-        withSpring(0)
+        withSpring(0),
       );
     }
-  }, [input, currentWord, currentTypingWord, isGameOver, game?.type, isCustomGame, luaRunner, luaGameState]);
+  }, [
+    input,
+    currentWord,
+    currentTypingWord,
+    isGameOver,
+    game?.type,
+    isCustomGame,
+    luaRunner,
+    luaGameState,
+  ]);
 
   const handlePlayAgain = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -211,7 +253,7 @@ export default function SoloGamePlayScreen() {
     setIsGameOver(false);
     setCorrectWords(0);
     progressWidth.value = 100;
-    
+
     if (isCustomGame && luaRunner) {
       try {
         const initialState = luaRunner.init();
@@ -245,19 +287,38 @@ export default function SoloGamePlayScreen() {
 
   if (isLoadingCustomGame) {
     return (
-      <View style={[styles.container, styles.centerContainer, { backgroundColor: theme.backgroundRoot }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centerContainer,
+          { backgroundColor: theme.backgroundRoot },
+        ]}
+      >
         <ActivityIndicator size="large" color={Colors.dark.primary} />
-        <ThemedText type="body" style={{ marginTop: Spacing.lg }}>Loading game...</ThemedText>
+        <ThemedText type="body" style={{ marginTop: Spacing.lg }}>
+          Loading game...
+        </ThemedText>
       </View>
     );
   }
 
   if (!game) {
     return (
-      <View style={[styles.container, styles.centerContainer, { backgroundColor: theme.backgroundRoot }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centerContainer,
+          { backgroundColor: theme.backgroundRoot },
+        ]}
+      >
         <ThemedText type="body">Game not found</ThemedText>
-        <Pressable onPress={() => navigation.goBack()} style={{ marginTop: Spacing.lg }}>
-          <ThemedText type="body" style={{ color: Colors.dark.primary }}>Go Back</ThemedText>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={{ marginTop: Spacing.lg }}
+        >
+          <ThemedText type="body" style={{ color: Colors.dark.primary }}>
+            Go Back
+          </ThemedText>
         </Pressable>
       </View>
     );
@@ -265,14 +326,37 @@ export default function SoloGamePlayScreen() {
 
   if (luaError) {
     return (
-      <View style={[styles.container, styles.centerContainer, { backgroundColor: theme.backgroundRoot }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centerContainer,
+          { backgroundColor: theme.backgroundRoot },
+        ]}
+      >
         <Feather name="alert-circle" size={48} color={Colors.dark.error} />
-        <ThemedText type="h4" style={{ marginTop: Spacing.lg, textAlign: "center" }}>Game Error</ThemedText>
-        <ThemedText type="body" style={{ marginTop: Spacing.sm, color: Colors.dark.textSecondary, textAlign: "center" }}>
+        <ThemedText
+          type="h4"
+          style={{ marginTop: Spacing.lg, textAlign: "center" }}
+        >
+          Game Error
+        </ThemedText>
+        <ThemedText
+          type="body"
+          style={{
+            marginTop: Spacing.sm,
+            color: Colors.dark.textSecondary,
+            textAlign: "center",
+          }}
+        >
           {luaError}
         </ThemedText>
-        <Pressable onPress={() => navigation.goBack()} style={{ marginTop: Spacing.xl }}>
-          <ThemedText type="body" style={{ color: Colors.dark.primary }}>Go Back</ThemedText>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={{ marginTop: Spacing.xl }}
+        >
+          <ThemedText type="body" style={{ color: Colors.dark.primary }}>
+            Go Back
+          </ThemedText>
         </Pressable>
       </View>
     );
@@ -280,7 +364,12 @@ export default function SoloGamePlayScreen() {
 
   if (isGameOver) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.backgroundRoot, paddingTop: insets.top }]}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: theme.backgroundRoot, paddingTop: insets.top },
+        ]}
+      >
         <Animated.View entering={FadeIn} style={styles.gameOverContainer}>
           <View style={styles.trophyContainer}>
             <Feather name="award" size={80} color={Colors.dark.secondary} />
@@ -309,7 +398,10 @@ export default function SoloGamePlayScreen() {
           </View>
           <View style={styles.gameOverActions}>
             <Button onPress={handlePlayAgain} variant="primary">
-              <ThemedText type="body" style={{ color: Colors.dark.backgroundRoot }}>
+              <ThemedText
+                type="body"
+                style={{ color: Colors.dark.backgroundRoot }}
+              >
                 Play Again
               </ThemedText>
             </Button>
@@ -325,7 +417,12 @@ export default function SoloGamePlayScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot, paddingTop: insets.top }]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme.backgroundRoot, paddingTop: insets.top },
+      ]}
+    >
       <View style={styles.header}>
         <Pressable
           style={styles.exitButton}
@@ -336,13 +433,20 @@ export default function SoloGamePlayScreen() {
         </Pressable>
         <View style={styles.timerContainer}>
           <Feather name="clock" size={16} color={Colors.dark.primary} />
-          <ThemedText type="h3" style={[styles.timer, timeLeft <= 10 && styles.timerWarning]}>
+          <ThemedText
+            type="h3"
+            style={[styles.timer, timeLeft <= 10 && styles.timerWarning]}
+          >
             {timeLeft}s
           </ThemedText>
         </View>
         <View style={styles.scoreContainer}>
-          <ThemedText type="body" style={styles.scoreLabel}>Score</ThemedText>
-          <ThemedText type="h3" style={styles.scoreValue}>{score}</ThemedText>
+          <ThemedText type="body" style={styles.scoreLabel}>
+            Score
+          </ThemedText>
+          <ThemedText type="h3" style={styles.scoreValue}>
+            {score}
+          </ThemedText>
         </View>
       </View>
 
@@ -351,18 +455,25 @@ export default function SoloGamePlayScreen() {
       </View>
 
       <View style={styles.gameArea}>
-        <Animated.View entering={FadeInDown.springify()} style={styles.wordContainer}>
+        <Animated.View
+          entering={FadeInDown.springify()}
+          style={styles.wordContainer}
+        >
           {isCustomGame && luaGameState ? (
             <>
               <ThemedText type="caption" style={styles.instruction}>
-                {luaGameState.currentChallenge ? "Your challenge:" : "Loading..."}
+                {luaGameState.currentChallenge
+                  ? "Your challenge:"
+                  : "Loading..."}
               </ThemedText>
               <ThemedText type="h1" style={styles.scrambledWord}>
                 {luaGameState.currentChallenge || "..."}
               </ThemedText>
-              {luaGameState.wrongGuesses > 0 && luaGameState.maxWrongGuesses > 0 ? (
+              {luaGameState.wrongGuesses > 0 &&
+              luaGameState.maxWrongGuesses > 0 ? (
                 <ThemedText type="caption" style={styles.wrongGuessInfo}>
-                  Wrong: {luaGameState.wrongGuesses} / {luaGameState.maxWrongGuesses}
+                  Wrong: {luaGameState.wrongGuesses} /{" "}
+                  {luaGameState.maxWrongGuesses}
                 </ThemedText>
               ) : null}
             </>
@@ -372,7 +483,9 @@ export default function SoloGamePlayScreen() {
                 {game.type === "speed" ? "Type this word:" : "Unscramble:"}
               </ThemedText>
               <ThemedText type="h1" style={styles.scrambledWord}>
-                {game.type === "speed" ? currentTypingWord : currentWord.scrambled}
+                {game.type === "speed"
+                  ? currentTypingWord
+                  : currentWord.scrambled}
               </ThemedText>
             </>
           )}
@@ -383,9 +496,17 @@ export default function SoloGamePlayScreen() {
             style={styles.input}
             value={input}
             onChangeText={setInput}
-            placeholder={isCustomGame ? "Enter your guess..." : "Type your answer..."}
+            placeholder={
+              isCustomGame ? "Enter your guess..." : "Type your answer..."
+            }
             placeholderTextColor={Colors.dark.textSecondary}
-            autoCapitalize={isCustomGame ? "characters" : (game.type === "speed" ? "none" : "characters")}
+            autoCapitalize={
+              isCustomGame
+                ? "characters"
+                : game.type === "speed"
+                  ? "none"
+                  : "characters"
+            }
             autoCorrect={false}
             returnKeyType="done"
             onSubmitEditing={handleSubmit}
@@ -396,7 +517,11 @@ export default function SoloGamePlayScreen() {
             onPress={handleSubmit}
             testID="button-submit-answer"
           >
-            <Feather name="arrow-right" size={24} color={Colors.dark.backgroundRoot} />
+            <Feather
+              name="arrow-right"
+              size={24}
+              color={Colors.dark.backgroundRoot}
+            />
           </Pressable>
         </Animated.View>
 

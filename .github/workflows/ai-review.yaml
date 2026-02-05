@@ -1,0 +1,96 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ai-review:
+    name: OpenAI Code Review
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed
+        run: |
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | head -20 >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Get diff
+        id: diff
+        run: |
+          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          git diff ${{ github.event.pull_request.base.sha }} ${{ github.sha }} -- '*.ts' '*.tsx' '*.js' '*.jsx' | head -500 >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: AI Review
+        if: steps.diff.outputs.diff != ''
+        uses: actions/github-script@v7
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        with:
+          script: |
+            const diff = `${{ steps.diff.outputs.diff }}`;
+            const files = `${{ steps.changed.outputs.files }}`;
+            
+            if (!process.env.OPENAI_API_KEY) {
+              console.log('OPENAI_API_KEY not set, skipping AI review');
+              return;
+            }
+            
+            if (!diff.trim()) {
+              console.log('No code changes to review');
+              return;
+            }
+            
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+              },
+              body: JSON.stringify({
+                model: 'gpt-4o',
+                messages: [
+                  {
+                    role: 'system',
+                    content: `You are a senior code reviewer for a React Native/Expo mobile app (Squad Party - a party games app). 
+                    Review the diff for:
+                    - Bugs or logic errors
+                    - Security issues
+                    - Performance concerns
+                    - React/React Native best practices
+                    - TypeScript type safety
+                    
+                    Be concise. Only mention significant issues. If the code looks good, say so briefly.
+                    Format as markdown with sections if needed.`
+                  },
+                  {
+                    role: 'user',
+                    content: `Review this PR diff:\n\nChanged files:\n${files}\n\nDiff:\n\`\`\`diff\n${diff.slice(0, 8000)}\n\`\`\``
+                  }
+                ],
+                max_tokens: 1000,
+                temperature: 0.3
+              })
+            });
+            
+            const data = await response.json();
+            const review = data.choices?.[0]?.message?.content || 'Unable to generate review';
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 🤖 AI Code Review\n\n${review}\n\n---\n*Powered by OpenAI GPT-4o*`
+            });

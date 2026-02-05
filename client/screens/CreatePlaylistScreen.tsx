@@ -93,13 +93,21 @@ function GameCard({ game, isSelected, onToggle, index }: GameCardProps) {
             </ThemedText>
             <View style={styles.gameMeta}>
               <View style={styles.metaItem}>
-                <Feather name="clock" size={12} color={Colors.dark.textSecondary} />
+                <Feather
+                  name="clock"
+                  size={12}
+                  color={Colors.dark.textSecondary}
+                />
                 <ThemedText type="caption" style={styles.metaText}>
                   {game.duration}s
                 </ThemedText>
               </View>
               <View style={styles.metaItem}>
-                <Feather name="tag" size={12} color={Colors.dark.textSecondary} />
+                <Feather
+                  name="tag"
+                  size={12}
+                  color={Colors.dark.textSecondary}
+                />
                 <ThemedText type="caption" style={styles.metaText}>
                   {game.type}
                 </ThemedText>
@@ -107,12 +115,7 @@ function GameCard({ game, isSelected, onToggle, index }: GameCardProps) {
             </View>
           </View>
         </View>
-        <View
-          style={[
-            styles.checkbox,
-            isSelected && styles.checkboxSelected,
-          ]}
-        >
+        <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
           {isSelected ? (
             <Feather name="check" size={16} color="#FFFFFF" />
           ) : null}
@@ -127,15 +130,18 @@ export default function CreatePlaylistScreen() {
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const { user } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "CreatePlaylist">>();
   const { miniGames, createPlaylist, updatePlaylist } = useGame();
 
   const existingPlaylist = route.params?.playlist;
   const [name, setName] = useState(existingPlaylist?.name || "");
-  const [description, setDescription] = useState(existingPlaylist?.description || "");
+  const [description, setDescription] = useState(
+    existingPlaylist?.description || "",
+  );
   const [selectedGames, setSelectedGames] = useState<string[]>(
-    existingPlaylist?.games || []
+    existingPlaylist?.games || [],
   );
   const [isLoading, setIsLoading] = useState(false);
 
@@ -144,7 +150,7 @@ export default function CreatePlaylistScreen() {
     setSelectedGames((prev) =>
       prev.includes(gameId)
         ? prev.filter((id) => id !== gameId)
-        : [...prev, gameId]
+        : [...prev, gameId],
     );
   };
 
@@ -161,7 +167,12 @@ export default function CreatePlaylistScreen() {
           games: selectedGames,
         });
       } else if (user) {
-        await createPlaylist(name.trim(), description.trim(), selectedGames, user.id);
+        await createPlaylist(
+          name.trim(),
+          description.trim(),
+          selectedGames,
+          user.id,
+        );
       }
       navigation.goBack();
     } catch (error) {
@@ -234,7 +245,9 @@ export default function CreatePlaylistScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}>
+      <View
+        style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}
+      >
         <Button
           onPress={handleSave}
           disabled={!isValid || isLoading}

@@ -87,11 +87,18 @@ function SessionCard({ session, index, onJoin }: SessionCardProps) {
             <View
               style={[
                 styles.statusDot,
-                { backgroundColor: session.status === "waiting" ? Colors.dark.success : Colors.dark.primary },
+                {
+                  backgroundColor:
+                    session.status === "waiting"
+                      ? Colors.dark.success
+                      : Colors.dark.primary,
+                },
               ]}
             />
             <ThemedText type="caption" style={styles.statusText}>
-              {session.status === "waiting" ? "Waiting for players" : "In progress"}
+              {session.status === "waiting"
+                ? "Waiting for players"
+                : "In progress"}
             </ThemedText>
           </View>
           {session.status === "waiting" && session.players.length < 4 ? (
@@ -130,12 +137,13 @@ export default function PlayScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { sessions, refreshSessions, joinSession } = useGame();
   const [refreshing, setRefreshing] = useState(false);
 
   const activeSessions = sessions.filter(
-    (s) => s.status === "waiting" && s.isPublic
+    (s) => s.status === "waiting" && s.isPublic,
   );
 
   const onRefresh = useCallback(async () => {

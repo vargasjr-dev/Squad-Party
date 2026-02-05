@@ -1,5 +1,7 @@
 module.exports = function (api) {
   api.cache(true);
+
+  // Only apply Expo babel config to non-Next.js files
   return {
     presets: ["babel-preset-expo"],
     plugins: [
@@ -16,5 +18,7 @@ module.exports = function (api) {
       ],
       "react-native-reanimated/plugin",
     ],
+    // Only apply to Expo/React Native files
+    ignore: ["./app/**", "./node_modules/next/**"],
   };
 };

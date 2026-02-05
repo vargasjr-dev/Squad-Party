@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  Pressable,
-  Alert,
-} from "react-native";
+import { View, StyleSheet, FlatList, Pressable, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -98,7 +92,11 @@ function GameItem({ game, index, onPress }: GameItemProps) {
             </ThemedText>
           </View>
         </View>
-        <Feather name="chevron-right" size={18} color={Colors.dark.textSecondary} />
+        <Feather
+          name="chevron-right"
+          size={18}
+          color={Colors.dark.textSecondary}
+        />
       </AnimatedPressable>
     </Animated.View>
   );
@@ -109,7 +107,8 @@ export default function PlaylistDetailScreen() {
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const { user } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "PlaylistDetail">>();
   const { playlists, miniGames, deletePlaylist, createSession } = useGame();
 
@@ -117,7 +116,13 @@ export default function PlaylistDetailScreen() {
 
   if (!playlist) {
     return (
-      <View style={[styles.container, styles.centerContainer, { backgroundColor: theme.backgroundRoot }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centerContainer,
+          { backgroundColor: theme.backgroundRoot },
+        ]}
+      >
         <ThemedText type="body" style={styles.notFoundText}>
           Playlist not found
         </ThemedText>
@@ -141,9 +146,9 @@ export default function PlaylistDetailScreen() {
 
   const handleCreateGame = async () => {
     if (!user) return;
-    
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+
     try {
       const gameId = `custom_game_${Date.now()}`;
       const res = await apiRequest("POST", "/api/custom-games", {
@@ -151,9 +156,12 @@ export default function PlaylistDetailScreen() {
         creatorId: user.id,
         playlistId: playlist.id,
       });
-      
+
       const newGame = await res.json();
-      navigation.navigate("GameStudio", { gameId: newGame.id, playlistId: playlist.id });
+      navigation.navigate("GameStudio", {
+        gameId: newGame.id,
+        playlistId: playlist.id,
+      });
     } catch (error) {
       console.error("Failed to create game:", error);
       Alert.alert("Error", "Failed to create game. Please try again.");
@@ -175,7 +183,7 @@ export default function PlaylistDetailScreen() {
             navigation.goBack();
           },
         },
-      ]
+      ],
     );
   };
 
@@ -190,7 +198,10 @@ export default function PlaylistDetailScreen() {
     navigation.navigate("SessionLobby", { sessionId: session.id });
   };
 
-  const totalDuration = playlistGames.reduce((acc, game) => acc + game.duration, 0);
+  const totalDuration = playlistGames.reduce(
+    (acc, game) => acc + game.duration,
+    0,
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -248,7 +259,11 @@ export default function PlaylistDetailScreen() {
                 </ThemedText>
               </View>
               <View style={styles.statItem}>
-                <Feather name="play-circle" size={16} color={Colors.dark.success} />
+                <Feather
+                  name="play-circle"
+                  size={16}
+                  color={Colors.dark.success}
+                />
                 <ThemedText type="small" style={styles.statText}>
                   {playlist.playCount} plays
                 </ThemedText>
@@ -292,7 +307,9 @@ export default function PlaylistDetailScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}>
+      <View
+        style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}
+      >
         <Button onPress={handlePlay} style={styles.playButton}>
           Host with this Playlist
         </Button>

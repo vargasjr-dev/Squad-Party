@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Image, ScrollView, TextInput, Pressable, ActivityIndicator } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Image,
+  ScrollView,
+  TextInput,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -26,7 +34,9 @@ function StatCard({ icon, label, value, color, delay }: StatCardProps) {
       entering={FadeInDown.delay(delay).springify()}
       style={styles.statCard}
     >
-      <View style={[styles.statIconContainer, { backgroundColor: color + "20" }]}>
+      <View
+        style={[styles.statIconContainer, { backgroundColor: color + "20" }]}
+      >
         <Feather name={icon} size={20} color={color} />
       </View>
       <ThemedText type="h3" style={styles.statValue}>
@@ -45,7 +55,7 @@ export default function ProfileScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
   const { user, hasPassword, setPassword } = useAuth();
-  
+
   const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -59,22 +69,22 @@ export default function ProfileScreen() {
   const handleChangePassword = async () => {
     setPasswordError("");
     setPasswordSuccess("");
-    
+
     if (newPassword.length < 4) {
       setPasswordError("Password must be at least 4 characters");
       return;
     }
-    
+
     if (newPassword !== confirmPassword) {
       setPasswordError("Passwords do not match");
       return;
     }
-    
+
     if (hasPassword && !currentPassword) {
       setPasswordError("Current password is required");
       return;
     }
-    
+
     setIsChangingPassword(true);
     try {
       await setPassword(newPassword, hasPassword ? currentPassword : undefined);
@@ -178,16 +188,20 @@ export default function ProfileScreen() {
         <ThemedText type="h4" style={styles.sectionTitle}>
           Security
         </ThemedText>
-        
+
         {passwordSuccess ? (
           <View style={styles.successMessage}>
-            <Feather name="check-circle" size={16} color={Colors.dark.success} />
+            <Feather
+              name="check-circle"
+              size={16}
+              color={Colors.dark.success}
+            />
             <ThemedText type="body" style={styles.successText}>
               {passwordSuccess}
             </ThemedText>
           </View>
         ) : null}
-        
+
         {showPasswordSection ? (
           <View style={styles.passwordForm}>
             {hasPassword ? (
@@ -225,13 +239,13 @@ export default function ProfileScreen() {
                 testID="input-confirm-password"
               />
             </View>
-            
+
             {passwordError ? (
               <ThemedText type="body" style={styles.errorText}>
                 {passwordError}
               </ThemedText>
             ) : null}
-            
+
             <View style={styles.passwordButtons}>
               <Pressable
                 style={styles.cancelButton}
@@ -248,7 +262,10 @@ export default function ProfileScreen() {
                 </ThemedText>
               </Pressable>
               <Pressable
-                style={[styles.saveButton, isChangingPassword && styles.disabledButton]}
+                style={[
+                  styles.saveButton,
+                  isChangingPassword && styles.disabledButton,
+                ]}
                 onPress={handleChangePassword}
                 disabled={isChangingPassword}
               >
@@ -275,10 +292,16 @@ export default function ProfileScreen() {
                 {hasPassword ? "Change Password" : "Set Password"}
               </ThemedText>
               <ThemedText type="caption" style={styles.activitySubtext}>
-                {hasPassword ? "Update your account password" : "Protect your account with a password"}
+                {hasPassword
+                  ? "Update your account password"
+                  : "Protect your account with a password"}
               </ThemedText>
             </View>
-            <Feather name="chevron-right" size={20} color={Colors.dark.textSecondary} />
+            <Feather
+              name="chevron-right"
+              size={20}
+              color={Colors.dark.textSecondary}
+            />
           </Pressable>
         )}
       </Animated.View>

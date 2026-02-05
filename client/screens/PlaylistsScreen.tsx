@@ -92,7 +92,11 @@ function PlaylistCard({ playlist, index, onPress }: PlaylistCardProps) {
             {gameCount} {gameCount === 1 ? "game" : "games"}
           </ThemedText>
         </View>
-        <Feather name="chevron-right" size={20} color={Colors.dark.textSecondary} />
+        <Feather
+          name="chevron-right"
+          size={20}
+          color={Colors.dark.textSecondary}
+        />
       </AnimatedPressable>
     </Animated.View>
   );
@@ -173,7 +177,13 @@ function EmptyState({ isCommunity }: { isCommunity: boolean }) {
   );
 }
 
-function DraftCard({ draft, onPress }: { draft: DraftGame; onPress: () => void }) {
+function DraftCard({
+  draft,
+  onPress,
+}: {
+  draft: DraftGame;
+  onPress: () => void;
+}) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -210,7 +220,11 @@ function DraftCard({ draft, onPress }: { draft: DraftGame; onPress: () => void }
         {preview}...
       </ThemedText>
       <View style={styles.draftMeta}>
-        <Feather name="message-circle" size={12} color={Colors.dark.textSecondary} />
+        <Feather
+          name="message-circle"
+          size={12}
+          color={Colors.dark.textSecondary}
+        />
         <ThemedText type="caption" style={styles.draftMetaText}>
           {messageCount}
         </ThemedText>
@@ -225,7 +239,8 @@ export default function PlaylistsScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { user } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { playlists, loadPlaylists } = useGame();
   const [selectedTab, setSelectedTab] = useState<TabType>("my");
   const [drafts, setDrafts] = useState<DraftGame[]>([]);
@@ -233,10 +248,13 @@ export default function PlaylistsScreen() {
 
   const loadDrafts = useCallback(async () => {
     if (!user?.id) return;
-    
+
     try {
       setLoadingDrafts(true);
-      const res = await apiRequest("GET", `/api/custom-games?userId=${user.id}&drafts=true`);
+      const res = await apiRequest(
+        "GET",
+        `/api/custom-games?userId=${user.id}&drafts=true`,
+      );
       const data = await res.json();
       setDrafts(data);
     } catch (error) {
@@ -255,7 +273,7 @@ export default function PlaylistsScreen() {
   useFocusEffect(
     useCallback(() => {
       loadDrafts();
-    }, [loadDrafts])
+    }, [loadDrafts]),
   );
 
   const filteredPlaylists =
@@ -307,7 +325,7 @@ export default function PlaylistsScreen() {
             </ThemedText>
           </Pressable>
         </View>
-        
+
         {drafts.length > 0 ? (
           <ScrollView
             horizontal
@@ -330,7 +348,11 @@ export default function PlaylistsScreen() {
             <ThemedText type="body" style={styles.emptyDraftsText}>
               Create your first game with AI
             </ThemedText>
-            <Feather name="chevron-right" size={18} color={Colors.dark.textSecondary} />
+            <Feather
+              name="chevron-right"
+              size={18}
+              color={Colors.dark.textSecondary}
+            />
           </Pressable>
         )}
       </Animated.View>
@@ -367,7 +389,9 @@ export default function PlaylistsScreen() {
             />
           </>
         }
-        ListEmptyComponent={<EmptyState isCommunity={selectedTab === "community"} />}
+        ListEmptyComponent={
+          <EmptyState isCommunity={selectedTab === "community"} />
+        }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
     </View>

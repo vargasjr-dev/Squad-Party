@@ -18,9 +18,9 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
-import Animated, { 
-  FadeIn, 
-  FadeInDown, 
+import Animated, {
+  FadeIn,
+  FadeInDown,
   SlideInRight,
   useSharedValue,
   useAnimatedStyle,
@@ -74,7 +74,8 @@ export default function GameStudioScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { user } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "GameStudio">>();
 
   const [activeTab, setActiveTab] = useState<TabType>("chat");
@@ -116,7 +117,7 @@ export default function GameStudioScreen() {
 
   const createNewGame = async (): Promise<CustomGame | null> => {
     if (!user) return null;
-    
+
     try {
       const newId = `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const res = await apiRequest("POST", "/api/custom-games", {
@@ -161,9 +162,14 @@ export default function GameStudioScreen() {
     };
 
     // Update local state immediately for responsiveness
-    const updatedHistory = [...(currentGame.chatHistory || []), userChatMessage];
-    setGame((prev) => 
-      prev ? { ...prev, chatHistory: updatedHistory } : { ...currentGame, chatHistory: updatedHistory }
+    const updatedHistory = [
+      ...(currentGame.chatHistory || []),
+      userChatMessage,
+    ];
+    setGame((prev) =>
+      prev
+        ? { ...prev, chatHistory: updatedHistory }
+        : { ...currentGame, chatHistory: updatedHistory },
     );
 
     try {
@@ -183,7 +189,7 @@ export default function GameStudioScreen() {
             gameId: currentGame.id,
             message: userMessage,
           }),
-        }
+        },
       );
 
       const result = await response.json();
@@ -191,19 +197,21 @@ export default function GameStudioScreen() {
       if (!response.ok || result.error) {
         // Create error message with executionId if available (so admin can debug)
         const isAdmin = user?.isAdmin === true;
-        let errorContent = result.error || `Request failed (${response.status})`;
-        
+        let errorContent =
+          result.error || `Request failed (${response.status})`;
+
         // Show detailed error info to admins
         if (isAdmin) {
           const details: string[] = [];
           if (result.state) details.push(`State: ${result.state}`);
-          if (result.executionId) details.push(`Execution: ${result.executionId}`);
+          if (result.executionId)
+            details.push(`Execution: ${result.executionId}`);
           if (result.details) details.push(`Details: ${result.details}`);
           if (details.length > 0) {
-            errorContent = `${errorContent}\n\n[Admin Debug]\n${details.join('\n')}`;
+            errorContent = `${errorContent}\n\n[Admin Debug]\n${details.join("\n")}`;
           }
         }
-        
+
         const errorMessage: ChatMessage = {
           id: `error_${Date.now()}`,
           role: "assistant",
@@ -211,12 +219,12 @@ export default function GameStudioScreen() {
           timestamp: Date.now(),
           executionId: result.executionId || undefined,
         };
-        
+
         const errorHistory = [...updatedHistory, errorMessage];
         setGame((prev) =>
-          prev ? { ...prev, chatHistory: errorHistory } : prev
+          prev ? { ...prev, chatHistory: errorHistory } : prev,
         );
-        
+
         // Save error message to database
         try {
           await apiRequest("PUT", `/api/custom-games/${currentGame.id}`, {
@@ -232,20 +240,19 @@ export default function GameStudioScreen() {
       await loadGame(currentGame.id);
     } catch (error) {
       console.error("Failed to send message:", error);
-      const errorContent = error instanceof Error ? error.message : "Unknown error";
+      const errorContent =
+        error instanceof Error ? error.message : "Unknown error";
       const errorMessage: ChatMessage = {
         id: `error_${Date.now()}`,
         role: "assistant",
         content: `Error: Failed to connect to AI service. ${errorContent}`,
         timestamp: Date.now(),
       };
-      
+
       // Add error message to existing history (which includes the user message)
       const errorHistory = [...updatedHistory, errorMessage];
-      setGame((prev) =>
-        prev ? { ...prev, chatHistory: errorHistory } : prev
-      );
-      
+      setGame((prev) => (prev ? { ...prev, chatHistory: errorHistory } : prev));
+
       // Save error message to database too
       try {
         await apiRequest("PUT", `/api/custom-games/${currentGame.id}`, {
@@ -275,29 +282,29 @@ export default function GameStudioScreen() {
       dot1Opacity.value = withRepeat(
         withSequence(
           withTiming(1, { duration: 400 }),
-          withTiming(0.3, { duration: 400 })
+          withTiming(0.3, { duration: 400 }),
         ),
-        -1
+        -1,
       );
       dot2Opacity.value = withDelay(
         200,
         withRepeat(
           withSequence(
             withTiming(1, { duration: 400 }),
-            withTiming(0.3, { duration: 400 })
+            withTiming(0.3, { duration: 400 }),
           ),
-          -1
-        )
+          -1,
+        ),
       );
       dot3Opacity.value = withDelay(
         400,
         withRepeat(
           withSequence(
             withTiming(1, { duration: 400 }),
-            withTiming(0.3, { duration: 400 })
+            withTiming(0.3, { duration: 400 }),
           ),
-          -1
-        )
+          -1,
+        ),
       );
     }, []);
 
@@ -306,7 +313,10 @@ export default function GameStudioScreen() {
     const dot3Style = useAnimatedStyle(() => ({ opacity: dot3Opacity.value }));
 
     return (
-      <Animated.View entering={FadeInDown.springify()} style={styles.typingContainer}>
+      <Animated.View
+        entering={FadeInDown.springify()}
+        style={styles.typingContainer}
+      >
         <View style={styles.typingBubble}>
           <Animated.View style={[styles.typingDot, dot1Style]} />
           <Animated.View style={[styles.typingDot, dot2Style]} />
@@ -410,12 +420,15 @@ export default function GameStudioScreen() {
   const renderChatMessage = ({ item }: { item: ChatMessage }) => {
     const isAdmin = user?.isAdmin === true;
     const hasExecutionId = item.role === "assistant" && item.executionId;
-    
+
     const tripleTapGesture = Gesture.Tap()
       .numberOfTaps(3)
       .onEnd(() => {
         if (isAdmin && hasExecutionId && item.executionId) {
-          scheduleOnRN(Haptics.notificationAsync, Haptics.NotificationFeedbackType.Success);
+          scheduleOnRN(
+            Haptics.notificationAsync,
+            Haptics.NotificationFeedbackType.Success,
+          );
           scheduleOnRN(openVellumExecution, item.executionId);
         }
       });
@@ -424,7 +437,10 @@ export default function GameStudioScreen() {
       .minDuration(500)
       .onEnd(() => {
         if (isAdmin && hasExecutionId && item.executionId) {
-          scheduleOnRN(Haptics.notificationAsync, Haptics.NotificationFeedbackType.Success);
+          scheduleOnRN(
+            Haptics.notificationAsync,
+            Haptics.NotificationFeedbackType.Success,
+          );
           scheduleOnRN(copyVellumLink, item.executionId);
         }
       });
@@ -480,10 +496,7 @@ export default function GameStudioScreen() {
         data={game?.chatHistory || []}
         keyExtractor={(item) => item.id}
         renderItem={renderChatMessage}
-        contentContainerStyle={[
-          styles.chatList,
-          { paddingBottom: Spacing.lg },
-        ]}
+        contentContainerStyle={[styles.chatList, { paddingBottom: Spacing.lg }]}
         ListEmptyComponent={
           <View style={styles.emptyChat}>
             <View style={styles.aiIcon}>
@@ -531,7 +544,12 @@ export default function GameStudioScreen() {
         }}
       />
 
-      <View style={[styles.inputContainer, { paddingBottom: insets.bottom + Spacing.sm }]}>
+      <View
+        style={[
+          styles.inputContainer,
+          { paddingBottom: insets.bottom + Spacing.sm },
+        ]}
+      >
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.textInput}
@@ -565,7 +583,10 @@ export default function GameStudioScreen() {
   const renderPreviewTab = () => (
     <ScrollView
       style={styles.previewContainer}
-      contentContainerStyle={[styles.previewContent, { paddingBottom: insets.bottom + Spacing.xl }]}
+      contentContainerStyle={[
+        styles.previewContent,
+        { paddingBottom: insets.bottom + Spacing.xl },
+      ]}
     >
       <Animated.View entering={FadeIn.delay(100)} style={styles.previewCard}>
         <View style={styles.previewHeader}>
@@ -573,7 +594,9 @@ export default function GameStudioScreen() {
             <Feather name="zap" size={28} color={Colors.dark.secondary} />
           </View>
           <View style={styles.previewInfo}>
-            <ThemedText type="h4">{game?.metadata.name || "New Game"}</ThemedText>
+            <ThemedText type="h4">
+              {game?.metadata.name || "New Game"}
+            </ThemedText>
             <ThemedText type="small" style={styles.previewMeta}>
               {game?.metadata.duration}s | {game?.metadata.type}
             </ThemedText>
@@ -603,8 +626,11 @@ export default function GameStudioScreen() {
         </View>
 
         <View style={styles.previewActions}>
-          <Pressable 
-            style={[styles.testButton, !game?.logicLua && styles.testButtonDisabled]}
+          <Pressable
+            style={[
+              styles.testButton,
+              !game?.logicLua && styles.testButtonDisabled,
+            ]}
             onPress={() => {
               if (game?.id && game?.logicLua) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -627,23 +653,35 @@ export default function GameStudioScreen() {
     <View style={styles.codeContainer}>
       <View style={styles.codeTabBar}>
         <Pressable
-          style={[styles.codeTabButton, codeTab === "metadata" && styles.codeTabButtonActive]}
+          style={[
+            styles.codeTabButton,
+            codeTab === "metadata" && styles.codeTabButtonActive,
+          ]}
           onPress={() => setCodeTab("metadata")}
         >
           <ThemedText
             type="small"
-            style={[styles.codeTabText, codeTab === "metadata" && styles.codeTabTextActive]}
+            style={[
+              styles.codeTabText,
+              codeTab === "metadata" && styles.codeTabTextActive,
+            ]}
           >
             metadata.json
           </ThemedText>
         </Pressable>
         <Pressable
-          style={[styles.codeTabButton, codeTab === "logic" && styles.codeTabButtonActive]}
+          style={[
+            styles.codeTabButton,
+            codeTab === "logic" && styles.codeTabButtonActive,
+          ]}
           onPress={() => setCodeTab("logic")}
         >
           <ThemedText
             type="small"
-            style={[styles.codeTabText, codeTab === "logic" && styles.codeTabTextActive]}
+            style={[
+              styles.codeTabText,
+              codeTab === "logic" && styles.codeTabTextActive,
+            ]}
           >
             logic.lua
           </ThemedText>
@@ -652,7 +690,10 @@ export default function GameStudioScreen() {
 
       <ScrollView
         style={styles.codeScrollView}
-        contentContainerStyle={[styles.codeContent, { paddingBottom: insets.bottom + Spacing.xl }]}
+        contentContainerStyle={[
+          styles.codeContent,
+          { paddingBottom: insets.bottom + Spacing.xl },
+        ]}
         horizontal={false}
       >
         <ScrollView horizontal showsHorizontalScrollIndicator>
@@ -668,7 +709,13 @@ export default function GameStudioScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.centerContainer, { backgroundColor: theme.backgroundRoot }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centerContainer,
+          { backgroundColor: theme.backgroundRoot },
+        ]}
+      >
         <ActivityIndicator size="large" color={Colors.dark.primary} />
         <ThemedText type="body" style={styles.loadingText}>
           Loading game studio...
@@ -684,20 +731,36 @@ export default function GameStudioScreen() {
           {(["chat", "preview", "code"] as TabType[]).map((tab) => (
             <Pressable
               key={tab}
-              style={[styles.tabButton, activeTab === tab && styles.tabButtonActive]}
+              style={[
+                styles.tabButton,
+                activeTab === tab && styles.tabButtonActive,
+              ]}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setActiveTab(tab);
               }}
             >
               <Feather
-                name={tab === "chat" ? "message-circle" : tab === "preview" ? "play-circle" : "code"}
+                name={
+                  tab === "chat"
+                    ? "message-circle"
+                    : tab === "preview"
+                      ? "play-circle"
+                      : "code"
+                }
                 size={20}
-                color={activeTab === tab ? Colors.dark.primary : Colors.dark.textSecondary}
+                color={
+                  activeTab === tab
+                    ? Colors.dark.primary
+                    : Colors.dark.textSecondary
+                }
               />
               <ThemedText
                 type="small"
-                style={[styles.tabButtonText, activeTab === tab && styles.tabButtonTextActive]}
+                style={[
+                  styles.tabButtonText,
+                  activeTab === tab && styles.tabButtonTextActive,
+                ]}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </ThemedText>

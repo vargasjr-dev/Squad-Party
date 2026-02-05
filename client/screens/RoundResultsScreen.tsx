@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  View,
-  StyleSheet,
-  Image,
-  Pressable,
-} from "react-native";
+import { View, StyleSheet, Image, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -36,7 +31,13 @@ interface RankCardProps {
   delay: number;
 }
 
-function RankCard({ rank, username, score, isCurrentUser, delay }: RankCardProps) {
+function RankCard({
+  rank,
+  username,
+  score,
+  isCurrentUser,
+  delay,
+}: RankCardProps) {
   const getRankColor = () => {
     switch (rank) {
       case 1:
@@ -119,7 +120,8 @@ function RankCard({ rank, username, score, isCurrentUser, delay }: RankCardProps
 export default function RoundResultsScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "RoundResults">>();
   const { currentSession, playlists, leaveSession } = useGame();
 
