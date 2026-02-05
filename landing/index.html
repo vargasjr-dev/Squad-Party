@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squad Party</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #1A1A2E 0%, #16213E 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      color: #fff;
+    }
+    .container {
+      text-align: center;
+      max-width: 400px;
+    }
+    .logo {
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, #FF6B6B, #FFD93D);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .tagline {
+      color: #B4B4B8;
+      font-size: 16px;
+      margin-bottom: 48px;
+    }
+    .qr-container {
+      background: #16213E;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .qr-container img {
+      width: 200px;
+      height: 200px;
+      border-radius: 8px;
+    }
+    .qr-label {
+      color: #B4B4B8;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+    .open-btn {
+      display: inline-block;
+      background: linear-gradient(90deg, #FF6B6B, #FF8E8E);
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 18px;
+      padding: 16px 48px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .open-btn:hover {
+      transform: scale(1.02);
+    }
+    .open-btn:active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+    .instructions {
+      margin-top: 32px;
+      color: #B4B4B8;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .instructions a {
+      color: #FFD93D;
+    }
+    .dev-url {
+      margin-top: 24px;
+      padding: 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #B4B4B8;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="logo">Squad Party</h1>
+    <p class="tagline">Party games with your squad</p>
+    
+    <div class="qr-container">
+      <img id="qr" src="" alt="QR Code">
+      <p class="qr-label">Scan with Expo Go</p>
+    </div>
+    
+    <a id="open-link" class="open-btn" href="#">
+      Open in Expo Go
+    </a>
+    
+    <div class="instructions">
+      <p>Don't have Expo Go?</p>
+      <p><a href="https://apps.apple.com/app/expo-go/id982107779" target="_blank">iOS App Store</a> · <a href="https://play.google.com/store/apps/details?id=host.exp.exponent" target="_blank">Google Play</a></p>
+    </div>
+    
+    <div class="dev-url" id="dev-url"></div>
+  </div>
+
+  <script>
+    // Configure your Expo URL here
+    const EXPO_URL = localStorage.getItem('squadparty_expo_url') || 'exp://192.168.1.1:8081';
+    
+    // Check URL params for dynamic URL
+    const params = new URLSearchParams(window.location.search);
+    const urlParam = params.get('url');
+    if (urlParam) {
+      localStorage.setItem('squadparty_expo_url', urlParam);
+      window.location.href = window.location.pathname;
+    }
+    
+    const expoUrl = localStorage.getItem('squadparty_expo_url') || EXPO_URL;
+    
+    // Set the open link
+    document.getElementById('open-link').href = expoUrl;
+    
+    // Generate QR code
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(expoUrl)}&bgcolor=16213E&color=FFFFFF`;
+    document.getElementById('qr').src = qrUrl;
+    
+    // Show current URL
+    document.getElementById('dev-url').textContent = expoUrl;
+  </script>
+</body>
+</html>
