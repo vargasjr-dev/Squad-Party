@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --coral: #FF6B6B;
+  --yellow: #FFD93D;
+  --navy: #1A1A2E;
+  --charcoal: #16213E;
+  --text-secondary: #B4B4B8;
+}
+
+body {
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--charcoal) 100%);
+  min-height: 100vh;
+}
