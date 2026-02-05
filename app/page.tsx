@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 
-const DEFAULT_EXPO_URL = "exp://192.168.1.1:8081";
+const DEFAULT_EXPO_URL = "exp://exp.host/@dvargas92495/squad-party";
 const STORAGE_KEY = "squadparty_expo_url";
 
 export default function Home() {
