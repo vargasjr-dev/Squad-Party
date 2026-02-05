@@ -11,7 +11,7 @@
 }
 
 body {
-  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-family: 'Poppins', system-ui, sans-serif;
   background: linear-gradient(135deg, var(--navy) 0%, var(--charcoal) 100%);
   min-height: 100vh;
 }

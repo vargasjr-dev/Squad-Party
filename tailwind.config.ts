@@ -14,7 +14,7 @@ const config: Config = {
         "text-secondary": "#B4B4B8",
       },
       fontFamily: {
-        sans: ["var(--font-poppins)", "system-ui", "sans-serif"],
+        sans: ["'Poppins'", "system-ui", "sans-serif"],
       },
     },
   },
