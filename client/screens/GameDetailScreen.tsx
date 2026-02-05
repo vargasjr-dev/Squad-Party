@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-} from "react-native";
+import { View, StyleSheet, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -54,7 +49,8 @@ export default function GameDetailScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "GameDetail">>();
   const { miniGames } = useGame();
 
@@ -62,7 +58,13 @@ export default function GameDetailScreen() {
 
   if (!game) {
     return (
-      <View style={[styles.container, styles.centerContainer, { backgroundColor: theme.backgroundRoot }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centerContainer,
+          { backgroundColor: theme.backgroundRoot },
+        ]}
+      >
         <ThemedText type="body" style={styles.notFoundText}>
           Game not found
         </ThemedText>
@@ -88,7 +90,10 @@ export default function GameDetailScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInDown.springify()} style={styles.heroSection}>
+        <Animated.View
+          entering={FadeInDown.springify()}
+          style={styles.heroSection}
+        >
           <View style={styles.iconContainer}>
             <Feather
               name={getTypeIcon(game.type)}
@@ -101,7 +106,11 @@ export default function GameDetailScreen() {
           </ThemedText>
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
-              <Feather name="clock" size={16} color={Colors.dark.textSecondary} />
+              <Feather
+                name="clock"
+                size={16}
+                color={Colors.dark.textSecondary}
+              />
               <ThemedText type="body" style={styles.metaText}>
                 {game.duration}s
               </ThemedText>
@@ -116,7 +125,10 @@ export default function GameDetailScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.section}>
+        <Animated.View
+          entering={FadeInDown.delay(100).springify()}
+          style={styles.section}
+        >
           <ThemedText type="subheading" style={styles.sectionTitle}>
             Description
           </ThemedText>
@@ -125,7 +137,10 @@ export default function GameDetailScreen() {
           </ThemedText>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.section}>
+        <Animated.View
+          entering={FadeInDown.delay(200).springify()}
+          style={styles.section}
+        >
           <ThemedText type="subheading" style={styles.sectionTitle}>
             Created By
           </ThemedText>
@@ -138,7 +153,11 @@ export default function GameDetailScreen() {
             </ThemedText>
             {game.isDefault ? (
               <View style={styles.officialBadge}>
-                <Feather name="check-circle" size={12} color={Colors.dark.secondary} />
+                <Feather
+                  name="check-circle"
+                  size={12}
+                  color={Colors.dark.secondary}
+                />
                 <ThemedText type="caption" style={styles.officialText}>
                   Official
                 </ThemedText>
@@ -147,7 +166,10 @@ export default function GameDetailScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.section}>
+        <Animated.View
+          entering={FadeInDown.delay(300).springify()}
+          style={styles.section}
+        >
           <ThemedText type="subheading" style={styles.sectionTitle}>
             How to Play
           </ThemedText>

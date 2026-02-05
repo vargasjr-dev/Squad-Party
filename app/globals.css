@@ -3,15 +3,15 @@
 @tailwind utilities;
 
 :root {
-  --coral: #FF6B6B;
-  --yellow: #FFD93D;
-  --navy: #1A1A2E;
-  --charcoal: #16213E;
-  --text-secondary: #B4B4B8;
+  --coral: #ff6b6b;
+  --yellow: #ffd93d;
+  --navy: #1a1a2e;
+  --charcoal: #16213e;
+  --text-secondary: #b4b4b8;
 }
 
 body {
-  font-family: 'Poppins', system-ui, sans-serif;
+  font-family: "Poppins", system-ui, sans-serif;
   background: linear-gradient(135deg, var(--navy) 0%, var(--charcoal) 100%);
   min-height: 100vh;
 }

@@ -45,10 +45,10 @@ function PlayerSlot({ player, index }: PlayerSlotProps) {
       pulseScale.value = withRepeat(
         withSequence(
           withSpring(1.05, { damping: 10, stiffness: 100 }),
-          withSpring(1, { damping: 10, stiffness: 100 })
+          withSpring(1, { damping: 10, stiffness: 100 }),
         ),
         -1,
-        true
+        true,
       );
     }
   }, [player]);
@@ -90,7 +90,11 @@ function PlayerSlot({ player, index }: PlayerSlotProps) {
       ) : (
         <>
           <View style={styles.emptySlot}>
-            <Feather name="user-plus" size={28} color={Colors.dark.textSecondary} />
+            <Feather
+              name="user-plus"
+              size={28}
+              color={Colors.dark.textSecondary}
+            />
           </View>
           <ThemedText type="small" style={styles.waitingText}>
             Waiting...
@@ -106,11 +110,13 @@ export default function SessionLobbyScreen() {
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const { user } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "SessionLobby">>();
   const { sessions, currentSession, leaveSession, startGame } = useGame();
 
-  const session = sessions.find((s) => s.id === route.params.sessionId) || currentSession;
+  const session =
+    sessions.find((s) => s.id === route.params.sessionId) || currentSession;
 
   const players: (SessionPlayer | undefined)[] = [
     ...(session?.players || []),
@@ -135,7 +141,13 @@ export default function SessionLobbyScreen() {
 
   if (!session) {
     return (
-      <View style={[styles.container, styles.loadingContainer, { backgroundColor: theme.backgroundRoot }]}>
+      <View
+        style={[
+          styles.container,
+          styles.loadingContainer,
+          { backgroundColor: theme.backgroundRoot },
+        ]}
+      >
         <ActivityIndicator size="large" color={Colors.dark.primary} />
       </View>
     );
@@ -152,7 +164,10 @@ export default function SessionLobbyScreen() {
           },
         ]}
       >
-        <Animated.View entering={FadeIn.delay(100)} style={styles.playlistBanner}>
+        <Animated.View
+          entering={FadeIn.delay(100)}
+          style={styles.playlistBanner}
+        >
           <Feather name="music" size={18} color={Colors.dark.secondary} />
           <ThemedText type="body" style={styles.playlistName}>
             {session.playlistName}

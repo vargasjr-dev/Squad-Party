@@ -37,7 +37,12 @@ interface PlaylistOptionProps {
   index: number;
 }
 
-function PlaylistOption({ playlist, isSelected, onSelect, index }: PlaylistOptionProps) {
+function PlaylistOption({
+  playlist,
+  isSelected,
+  onSelect,
+  index,
+}: PlaylistOptionProps) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -75,14 +80,9 @@ function PlaylistOption({ playlist, isSelected, onSelect, index }: PlaylistOptio
           </View>
         </View>
         <View
-          style={[
-            styles.radioButton,
-            isSelected && styles.radioButtonSelected,
-          ]}
+          style={[styles.radioButton, isSelected && styles.radioButtonSelected]}
         >
-          {isSelected ? (
-            <View style={styles.radioButtonInner} />
-          ) : null}
+          {isSelected ? <View style={styles.radioButtonInner} /> : null}
         </View>
       </AnimatedPressable>
     </Animated.View>
@@ -94,7 +94,8 @@ export default function HostSessionScreen() {
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const { user } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { playlists, createSession } = useGame();
   const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
   const [isPublic, setIsPublic] = useState(true);

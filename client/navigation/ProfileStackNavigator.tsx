@@ -18,7 +18,8 @@ const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
 function SettingsButton() {
   const { theme } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <Pressable

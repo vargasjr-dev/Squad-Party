@@ -1,6 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Force SWC even though babel.config.js exists (for Expo)
+  experimental: {
+    forceSwcTransforms: true,
+  },
+  // Disable type checking during build (run separately)
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    // Only lint Next.js app directory
+    dirs: ["app"],
+  },
   // Ignore Expo/React Native files during Next.js build
   webpack: (config) => {
     config.resolve.alias = {
@@ -9,7 +21,6 @@ const nextConfig: NextConfig = {
     };
     return config;
   },
-  // Exclude mobile app directories from Next.js
   pageExtensions: ["tsx", "ts", "jsx", "js"],
 };
 

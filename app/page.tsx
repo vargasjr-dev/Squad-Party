@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -55,9 +56,7 @@ export default function Home() {
               className="w-48 h-48 mx-auto rounded-lg"
             />
           )}
-          <p className="text-text-secondary text-sm mt-3">
-            Scan with Expo Go
-          </p>
+          <p className="text-text-secondary text-sm mt-3">Scan with Expo Go</p>
         </div>
 
         <a

@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiRequest } from "@/lib/query-client";
 
@@ -48,15 +54,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (stored) {
         const localUser = JSON.parse(stored);
         setUser(localUser);
-        
+
         try {
           const res = await apiRequest("GET", `/api/users/${localUser.id}`);
           const serverUser = await res.json();
           setUser(serverUser);
           await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(serverUser));
-          
+
           // Check if user has password
-          const checkRes = await apiRequest("GET", `/api/auth/check/${serverUser.username}`);
+          const checkRes = await apiRequest(
+            "GET",
+            `/api/auth/check/${serverUser.username}`,
+          );
           const checkData = await checkRes.json();
           setHasPassword(checkData.hasPassword);
         } catch (error) {
@@ -72,7 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkUsername = async (username: string): Promise<AuthCheckResult> => {
     try {
-      const res = await apiRequest("GET", `/api/auth/check/${encodeURIComponent(username)}`);
+      const res = await apiRequest(
+        "GET",
+        `/api/auth/check/${encodeURIComponent(username)}`,
+      );
       return await res.json();
     } catch (error) {
       console.error("Failed to check username:", error);
@@ -83,19 +95,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password?: string) => {
     // First check if user exists and has password
     const checkResult = await checkUsername(username);
-    
+
     if (checkResult.exists && checkResult.hasPassword) {
       // User exists with password - must authenticate
       if (!password) {
         throw new Error("PASSWORD_REQUIRED");
       }
-      
-      const res = await apiRequest("POST", "/api/auth/login", { username, password });
+
+      const res = await apiRequest("POST", "/api/auth/login", {
+        username,
+        password,
+      });
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Invalid password");
       }
-      
+
       const serverUser = await res.json();
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(serverUser));
       setUser(serverUser);
@@ -119,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         topRank: 0,
         isAdmin: false,
       };
-      
+
       try {
         const res = await apiRequest("POST", "/api/users", newUser);
         const serverUser = await res.json();
@@ -142,7 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (updates: Partial<User>) => {
     if (!user) return;
     const updated = { ...user, ...updates };
-    
+
     try {
       const res = await apiRequest("PUT", `/api/users/${user.id}`, updated);
       const serverUser = await res.json();
@@ -157,22 +172,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setPassword = async (newPassword: string, currentPassword?: string) => {
     if (!user) throw new Error("Not logged in");
-    
+
     const res = await apiRequest("POST", `/api/users/${user.id}/password`, {
       currentPassword,
       newPassword,
     });
-    
+
     if (!res.ok) {
       const error = await res.json();
       throw new Error(error.error || "Failed to set password");
     }
-    
+
     setHasPassword(true);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, checkUsername, login, logout, updateProfile, setPassword, hasPassword }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        checkUsername,
+        login,
+        logout,
+        updateProfile,
+        setPassword,
+        hasPassword,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
