@@ -42,6 +42,18 @@
     ],
     "experiments": {
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0b6dc79c-abd5-43da-9dfc-6fdd12d4a836"
+      }
+    },
+    "owner": "dvargas92495",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/0b6dc79c-abd5-43da-9dfc-6fdd12d4a836"
     }
   }
 }
