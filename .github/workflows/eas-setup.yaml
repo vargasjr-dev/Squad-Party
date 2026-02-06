@@ -2,7 +2,7 @@ name: EAS Setup (One-Time)
 
 on:
   push:
-    branches: [main]
+    branches: [feature/eas-setup-workflow]
     paths:
       - ".github/workflows/eas-setup.yaml"
 
