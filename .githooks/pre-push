@@ -1,0 +1,25 @@
+#!/bin/bash
+# Pre-push hook: Prevent direct pushes to main branch
+# The path to the dark side, direct pushes are. Through PRs, you must go.
+
+protected_branch="main"
+current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
+
+while read local_ref local_sha remote_ref remote_sha; do
+  if [[ "$remote_ref" == *"$protected_branch"* ]]; then
+    echo ""
+    echo "🚫 Direct push to '$protected_branch' blocked!"
+    echo ""
+    echo "The dark side of the Force, direct pushes are."
+    echo "Create a PR, you must. CI and reviewers check your work, they will."
+    echo ""
+    echo "To create a PR:"
+    echo "  1. git checkout -b feature/your-branch-name"
+    echo "  2. git push origin feature/your-branch-name"
+    echo "  3. Open PR on GitHub"
+    echo ""
+    exit 1
+  fi
+done
+
+exit 0
