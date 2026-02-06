@@ -18,6 +18,9 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Install EAS CLI
         run: npm install -g eas-cli
 
@@ -25,11 +28,10 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          cd client
           eas update:configure --non-interactive || eas project:init --non-interactive
           
           # Extract and display the project ID
-          PROJECT_ID=$(grep -oP '"projectId":\s*"\K[^"]+' ../app.json || echo "not found")
+          PROJECT_ID=$(grep -oP '"projectId":\s*"\K[^"]+' app.json || echo "not found")
           echo "## EAS Project ID" >> $GITHUB_STEP_SUMMARY
           echo "\`$PROJECT_ID\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
