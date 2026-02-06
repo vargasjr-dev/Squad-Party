@@ -3,10 +3,11 @@
 # The path to the dark side, direct pushes are. Through PRs, you must go.
 
 protected_branch="main"
-current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
+remote="$1"
 
 while read local_ref local_sha remote_ref remote_sha; do
-  if [[ "$remote_ref" == *"$protected_branch"* ]]; then
+  # Check if pushing to protected branch
+  if [[ "$remote_ref" == "refs/heads/$protected_branch" ]]; then
     echo ""
     echo "🚫 Direct push to '$protected_branch' blocked!"
     echo ""
