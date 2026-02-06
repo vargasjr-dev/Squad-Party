@@ -636,137 +636,228 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Vellum Chat endpoint (non-streaming, buffers full response server-side)
-  app.post("/api/vellum/chat", async (req: Request, res: Response) => {
+  // Claude Chat endpoint for Game Studio (replaces Vellum)
+  const GAME_STUDIO_SYSTEM_PROMPT = `You are an AI game development assistant for Squad Party, a mobile party game app. You help users create custom mini-games using Lua scripting.
+
+## Your Capabilities
+- Help design game mechanics and rules
+- Write and modify Lua game logic
+- Update game metadata (name, description, rules, duration)
+- Suggest improvements and debug issues
+
+## Game Structure
+Each game has:
+1. **metadata.json**: Game info (name, description, type, duration, rules)
+2. **logic.lua**: Lua script controlling game behavior
+
+## Lua API Available
+- Game.init() - Initialize game state
+- Game.update(dt) - Called every frame with delta time
+- Game.onInput(playerId, action, data) - Handle player input
+- Game.getState() - Return current game state for UI
+- Game.isComplete() - Return true when game should end
+- Game.getResults() - Return final scores/rankings
+
+## Response Format
+When you need to update game files, include them in your response using these markers:
+
+\`\`\`metadata
+{
+  "name": "Game Name",
+  "description": "Description",
+  "type": "custom",
+  "duration": 60,
+  "rules": ["Rule 1", "Rule 2"],
+  "version": "1.0.0"
+}
+\`\`\`
+
+\`\`\`lua
+-- Your Lua code here
+\`\`\`
+
+Only include file blocks when you're actually changing them. Always explain what you're doing in plain text too.`;
+
+  // Helper to extract code blocks from Claude's response
+  function extractCodeBlocks(content: string): {
+    metadata?: GameMetadata;
+    logicLua?: string;
+    cleanContent: string;
+  } {
+    let metadata: GameMetadata | undefined;
+    let logicLua: string | undefined;
+    let cleanContent = content;
+
+    // Extract metadata block
+    const metadataMatch = content.match(/```metadata\s*\n([\s\S]*?)\n```/);
+    if (metadataMatch) {
+      try {
+        metadata = JSON.parse(metadataMatch[1]);
+        cleanContent = cleanContent.replace(metadataMatch[0], "").trim();
+      } catch (e) {
+        console.error("[Claude] Failed to parse metadata JSON:", e);
+      }
+    }
+
+    // Extract lua block
+    const luaMatch = content.match(/```lua\s*\n([\s\S]*?)\n```/);
+    if (luaMatch) {
+      logicLua = luaMatch[1];
+      cleanContent = cleanContent.replace(luaMatch[0], "").trim();
+    }
+
+    return { metadata, logicLua, cleanContent };
+  }
+
+  // Claude Chat endpoint (also supports legacy /api/vellum/chat path)
+  const handleClaudeChat = async (req: Request, res: Response) => {
     try {
       const { userId, gameId, message } = req.body;
 
-      const VELLUM_API_KEY = process.env.VELLUM_API_KEY;
-      if (!VELLUM_API_KEY) {
-        return res.status(500).json({ error: "Vellum API key not configured" });
-      }
-
-      const VELLUM_WORKFLOW_ID = process.env.VELLUM_WORKFLOW_ID;
-      if (!VELLUM_WORKFLOW_ID) {
+      const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+      if (!ANTHROPIC_API_KEY) {
         return res
           .status(500)
-          .json({ error: "Vellum workflow ID not configured" });
+          .json({ error: "Anthropic API key not configured" });
       }
 
-      console.log(
-        `[Vellum] Calling workflow ${VELLUM_WORKFLOW_ID} for game ${gameId}`,
-      );
-
-      // Call Vellum execute-workflow endpoint (non-streaming)
-      const vellumResponse = await fetch(
-        `https://predict.vellum.ai/v1/execute-workflow`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-API-KEY": VELLUM_API_KEY,
-          },
-          body: JSON.stringify({
-            workflow_deployment_name: VELLUM_WORKFLOW_ID,
-            inputs: [
-              { name: "user_id", type: "STRING", value: userId },
-              { name: "game_id", type: "STRING", value: gameId },
-              { name: "message", type: "STRING", value: message },
-            ],
-          }),
-        },
-      );
-
-      if (!vellumResponse.ok) {
-        const errorText = await vellumResponse.text();
-        console.error("[Vellum] API error:", errorText);
-        return res.status(vellumResponse.status).json({
-          error: "Vellum API error",
-          details: errorText,
-        });
-      }
-
-      const vellumResult = await vellumResponse.json();
-      console.log(
-        "[Vellum] Workflow result:",
-        JSON.stringify(vellumResult, null, 2),
-      );
-
-      const executionId = vellumResult.execution_id || null;
-
-      // Check for workflow execution errors
-      if (
-        vellumResult.state === "REJECTED" ||
-        vellumResult.state === "FAILED"
-      ) {
-        const errorMessage =
-          vellumResult.error?.message || "Workflow execution failed";
-        console.error("[Vellum] Workflow failed:", errorMessage);
-        return res.status(500).json({
-          error: `AI workflow failed: ${errorMessage}`,
-          executionId,
-          state: vellumResult.state,
-        });
-      }
-
-      // Extract assistant response from Vellum output
-      let assistantContent: string | null = null;
-
-      if (vellumResult.data?.outputs) {
-        const responseOutput = vellumResult.data.outputs.find(
-          (o: { name: string; value?: string }) => o.name === "response",
-        );
-        if (responseOutput?.value) {
-          assistantContent = responseOutput.value;
-        }
-      }
-
-      // If we got no response from the workflow, treat it as an error
-      if (!assistantContent) {
-        console.error("[Vellum] No response output found in workflow result");
-        return res.status(500).json({
-          error: "AI did not return a response. Please try again.",
-          executionId,
-          workflowResult: vellumResult,
-        });
-      }
-
-      console.log(`[Vellum] Execution ID: ${executionId}`);
-
-      // Add assistant message to chat history (with execution ID for admin debugging)
+      // Fetch game context
       const game = await db.query.customGames.findFirst({
         where: eq(customGames.id, gameId),
       });
 
-      if (game) {
-        const assistantMessage: ChatMessage = {
-          id: `msg_${Date.now()}_assistant`,
-          role: "assistant",
-          content: assistantContent,
-          timestamp: Date.now(),
-          executionId: executionId || undefined,
-        };
-
-        await db
-          .update(customGames)
-          .set({
-            chatHistory: [...(game.chatHistory || []), assistantMessage],
-            updatedAt: new Date(),
-          })
-          .where(eq(customGames.id, gameId));
+      if (!game) {
+        return res.status(404).json({ error: "Game not found" });
       }
+
+      console.log(`[Claude] Processing chat for game ${gameId}`);
+
+      // Build messages array with chat history
+      const messages: Array<{ role: "user" | "assistant"; content: string }> =
+        [];
+
+      // Add chat history
+      for (const msg of game.chatHistory || []) {
+        messages.push({
+          role: msg.role,
+          content: msg.content,
+        });
+      }
+
+      // Add current user message
+      messages.push({
+        role: "user",
+        content: message,
+      });
+
+      // Build context about current game state
+      const gameContext = `
+## Current Game State
+
+**Game ID:** ${gameId}
+
+**metadata.json:**
+\`\`\`json
+${JSON.stringify(game.metadata, null, 2)}
+\`\`\`
+
+**logic.lua:**
+\`\`\`lua
+${game.logicLua}
+\`\`\`
+
+**Assets:** ${Object.keys(game.assets || {}).length > 0 ? JSON.stringify(game.assets) : "None"}
+
+---
+
+User message: ${message}`;
+
+      // Replace the last user message with the enriched context
+      messages[messages.length - 1].content = gameContext;
+
+      // Call Claude API
+      const claudeResponse = await fetch(
+        "https://api.anthropic.com/v1/messages",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 4096,
+            system: GAME_STUDIO_SYSTEM_PROMPT,
+            messages: messages,
+          }),
+        },
+      );
+
+      if (!claudeResponse.ok) {
+        const errorText = await claudeResponse.text();
+        console.error("[Claude] API error:", errorText);
+        return res.status(claudeResponse.status).json({
+          error: "Claude API error",
+          details: errorText,
+        });
+      }
+
+      const claudeResult = await claudeResponse.json();
+      const assistantContent =
+        claudeResult.content?.[0]?.text || "No response generated";
+
+      console.log(
+        `[Claude] Response received, ${assistantContent.length} chars`,
+      );
+
+      // Extract any code blocks and update game files
+      const { metadata, logicLua, cleanContent } =
+        extractCodeBlocks(assistantContent);
+
+      // Update game files if Claude provided new versions
+      const updateData: Record<string, unknown> = { updatedAt: new Date() };
+      if (metadata) {
+        updateData.metadata = metadata;
+        console.log("[Claude] Updating game metadata");
+      }
+      if (logicLua) {
+        updateData.logicLua = logicLua;
+        console.log("[Claude] Updating game logic.lua");
+      }
+
+      // Add assistant message to chat history
+      const assistantMessage: ChatMessage = {
+        id: `msg_${Date.now()}_assistant`,
+        role: "assistant",
+        content: assistantContent,
+        timestamp: Date.now(),
+      };
+
+      updateData.chatHistory = [...(game.chatHistory || []), assistantMessage];
+
+      await db
+        .update(customGames)
+        .set(updateData)
+        .where(eq(customGames.id, gameId));
 
       res.json({
         success: true,
         response: assistantContent,
-        executionId,
-        workflowResult: vellumResult,
+        filesUpdated: {
+          metadata: !!metadata,
+          logicLua: !!logicLua,
+        },
       });
     } catch (error) {
-      console.error("[Vellum] Error executing workflow:", error);
-      res.status(500).json({ error: "Failed to execute workflow" });
+      console.error("[Claude] Error:", error);
+      res.status(500).json({ error: "Failed to process chat" });
     }
-  });
+  };
+
+  // Register both endpoints (new and legacy)
+  app.post("/api/claude/chat", handleClaudeChat);
+  app.post("/api/vellum/chat", handleClaudeChat); // Legacy support
 
   const httpServer = createServer(app);
 
