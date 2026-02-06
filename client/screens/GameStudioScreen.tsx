@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Linking,
   Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -173,14 +172,14 @@ export default function GameStudioScreen() {
     );
 
     try {
-      // STEP 1: Save user message to database first (persist before calling Vellum)
+      // STEP 1: Save user message to database first (persist before calling Claude)
       await apiRequest("PUT", `/api/custom-games/${currentGame.id}`, {
         chatHistory: updatedHistory,
       });
 
-      // STEP 2: Call Vellum (non-streaming endpoint that buffers response)
+      // STEP 2: Call Claude (non-streaming endpoint that buffers response)
       const response = await fetch(
-        new URL("/api/vellum/chat", getApiUrl()).toString(),
+        new URL("/api/claude/chat", getApiUrl()).toString(),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -236,7 +235,7 @@ export default function GameStudioScreen() {
         return;
       }
 
-      // STEP 3: Reload game to get updated state (Vellum may have updated artifacts)
+      // STEP 3: Reload game to get updated state (Claude may have updated artifacts)
       await loadGame(currentGame.id);
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -266,11 +265,9 @@ export default function GameStudioScreen() {
     }
   };
 
-  const openVellumExecution = (executionId: string) => {
-    const url = `https://app.vellum.ai/workflows/executions/${executionId}`;
-    Linking.openURL(url).catch((err) => {
-      console.error("Failed to open Vellum execution:", err);
-    });
+  // Copy message content to clipboard (for debugging)
+  const copyMessageContent = async (content: string) => {
+    await Clipboard.setStringAsync(content);
   };
 
   const TypingIndicator = () => {
@@ -324,11 +321,6 @@ export default function GameStudioScreen() {
         </View>
       </Animated.View>
     );
-  };
-
-  const copyVellumLink = async (executionId: string) => {
-    const url = `https://app.vellum.ai/workflows/executions/${executionId}`;
-    await Clipboard.setStringAsync(url);
   };
 
   const markdownStyles = {
@@ -418,34 +410,16 @@ export default function GameStudioScreen() {
   };
 
   const renderChatMessage = ({ item }: { item: ChatMessage }) => {
-    const isAdmin = user?.isAdmin === true;
-    const hasExecutionId = item.role === "assistant" && item.executionId;
-
-    const tripleTapGesture = Gesture.Tap()
-      .numberOfTaps(3)
-      .onEnd(() => {
-        if (isAdmin && hasExecutionId && item.executionId) {
-          scheduleOnRN(
-            Haptics.notificationAsync,
-            Haptics.NotificationFeedbackType.Success,
-          );
-          scheduleOnRN(openVellumExecution, item.executionId);
-        }
-      });
-
+    // Long press to copy message content (for debugging)
     const longPressGesture = Gesture.LongPress()
       .minDuration(500)
       .onEnd(() => {
-        if (isAdmin && hasExecutionId && item.executionId) {
-          scheduleOnRN(
-            Haptics.notificationAsync,
-            Haptics.NotificationFeedbackType.Success,
-          );
-          scheduleOnRN(copyVellumLink, item.executionId);
-        }
+        scheduleOnRN(
+          Haptics.notificationAsync,
+          Haptics.NotificationFeedbackType.Success,
+        );
+        scheduleOnRN(copyMessageContent, item.content);
       });
-
-    const combinedGesture = Gesture.Race(tripleTapGesture, longPressGesture);
 
     const messageContent = (
       <Animated.View
@@ -476,7 +450,7 @@ export default function GameStudioScreen() {
 
     if (isAdmin && hasExecutionId) {
       return (
-        <GestureDetector gesture={combinedGesture}>
+        <GestureDetector gesture={longPressGesture}>
           {messageContent}
         </GestureDetector>
       );

@@ -68,7 +68,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
-  executionId?: string; // Vellum workflow execution ID (for admin debugging)
+  executionId?: string; // Legacy field (previously used for Vellum)
 }
 
 export const customGames = pgTable("custom_games", {
