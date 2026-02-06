@@ -28,7 +28,10 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          eas update:configure --non-interactive || eas project:init --non-interactive
+          # Initialize EAS project first (creates if doesn't exist)
+          eas init --non-interactive --force
+          # Then configure updates
+          eas update:configure --non-interactive
           
           # Extract and display the project ID
           PROJECT_ID=$(grep -oP '"projectId":\s*"\K[^"]+' app.json || echo "not found")
