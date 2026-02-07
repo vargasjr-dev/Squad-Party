@@ -59,13 +59,15 @@ export default function GamePlayScreen() {
   const timerProgress = useSharedValue(1);
   const scoreScale = useSharedValue(1);
 
-  const scrambleWord = (word: string) => {
+  const scrambleWord = (word: string): string => {
     const arr = word.split("");
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     const scrambled = arr.join("");
+    // Avoid infinite recursion for single-char words
+    if (word.length <= 1) return word;
     return scrambled === word ? scrambleWord(word) : scrambled;
   };
 
