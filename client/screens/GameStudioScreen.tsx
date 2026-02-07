@@ -410,6 +410,9 @@ export default function GameStudioScreen() {
   };
 
   const renderChatMessage = ({ item }: { item: ChatMessage }) => {
+    const isAdmin = user?.isAdmin === true;
+    const hasExecutionId = !!item.executionId;
+
     // Long press to copy message content (for debugging)
     const longPressGesture = Gesture.LongPress()
       .minDuration(500)
