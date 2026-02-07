@@ -81,10 +81,18 @@ return Game
 `;
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Admin usernames list with initial passwords
-  const ADMIN_USERS: Record<string, string> = {
-    vargas: "902495",
-  };
+  // Admin configuration from environment variables
+  // Format: ADMIN_USERS="username1:password1,username2:password2"
+  const ADMIN_USERS: Record<string, string> = {};
+  const adminUsersEnv = process.env.ADMIN_USERS;
+  if (adminUsersEnv) {
+    for (const entry of adminUsersEnv.split(",")) {
+      const [username, password] = entry.split(":").map((s) => s.trim());
+      if (username && password) {
+        ADMIN_USERS[username.toLowerCase()] = password;
+      }
+    }
+  }
 
   // User routes
   app.post("/api/users", async (req: Request, res: Response) => {
