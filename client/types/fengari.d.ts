@@ -36,7 +36,12 @@ declare module "fengari" {
 
     lua_pop(L: LuaState, n: number): void;
     lua_remove(L: LuaState, index: number): void;
-    lua_pcall(L: LuaState, nargs: number, nresults: number, msgh: number): number;
+    lua_pcall(
+      L: LuaState,
+      nargs: number,
+      nresults: number,
+      msgh: number,
+    ): number;
     lua_next(L: LuaState, index: number): number;
     lua_close(L: LuaState): void;
   };
