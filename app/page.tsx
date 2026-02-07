@@ -4,7 +4,9 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 
-const DEFAULT_EXPO_URL = "exp://exp.host/@dvargas92495/squad-party";
+// EAS Updates URL format - uses project ID and channel
+const EAS_PROJECT_ID = "0b6dc79c-abd5-43da-9dfc-6fdd12d4a836";
+const DEFAULT_EXPO_URL = `exp://u.expo.dev/${EAS_PROJECT_ID}?channel-name=main`;
 const STORAGE_KEY = "squadparty_expo_url";
 
 export default function Home() {
