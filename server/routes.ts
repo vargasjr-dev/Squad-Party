@@ -12,6 +12,25 @@ import {
 } from "../shared/schema";
 import { eq, and } from "drizzle-orm";
 
+// Helper to safely extract route params as strings
+// Express route params (e.g., :id) are always strings, but TypeScript types them more loosely
+function getParam(req: Request, name: string): string {
+  const value = req.params[name];
+  if (Array.isArray(value)) {
+    return value[0] ?? "";
+  }
+  return value ?? "";
+}
+
+// Helper to safely extract query params as strings
+function getQueryParam(req: Request, name: string): string | undefined {
+  const value = req.query[name];
+  if (Array.isArray(value)) {
+    return typeof value[0] === "string" ? value[0] : undefined;
+  }
+  return typeof value === "string" ? value : undefined;
+}
+
 const DEFAULT_METADATA: GameMetadata = {
   name: "New Game",
   description: "A custom mini-game",
@@ -149,8 +168,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/:id", async (req: Request, res: Response) => {
     try {
+      const id = getParam(req, "id");
       const user = await db.query.users.findFirst({
-        where: eq(users.id, req.params.id),
+        where: eq(users.id, id),
       });
 
       if (!user) {
@@ -167,8 +187,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Check if username has password protection
   app.get("/api/auth/check/:username", async (req: Request, res: Response) => {
     try {
+      const username = getParam(req, "username");
       const user = await db.query.users.findFirst({
-        where: eq(users.username, req.params.username),
+        where: eq(users.username, username),
       });
 
       if (!user) {
@@ -220,10 +241,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set or change password
   app.post("/api/users/:id/password", async (req: Request, res: Response) => {
     try {
+      const id = getParam(req, "id");
       const { currentPassword, newPassword } = req.body;
 
       const user = await db.query.users.findFirst({
-        where: eq(users.id, req.params.id),
+        where: eq(users.id, id),
       });
 
       if (!user) {
@@ -250,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [updatedUser] = await db
         .update(users)
         .set({ passwordHash })
-        .where(eq(users.id, req.params.id))
+        .where(eq(users.id, id))
         .returning();
 
       // Return user without passwordHash
@@ -264,12 +286,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/users/:id", async (req: Request, res: Response) => {
     try {
+      const id = getParam(req, "id");
       const { username, avatarUrl, gamesPlayed, wins, topRank } = req.body;
 
       const [updatedUser] = await db
         .update(users)
         .set({ username, avatarUrl, gamesPlayed, wins, topRank })
-        .where(eq(users.id, req.params.id))
+        .where(eq(users.id, id))
         .returning();
 
       if (!updatedUser) {
@@ -286,7 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Playlist routes
   app.get("/api/playlists", async (req: Request, res: Response) => {
     try {
-      const userId = req.query.userId as string;
+      const userId = getQueryParam(req, "userId");
 
       if (userId) {
         const userPlaylists = await db.query.playlists.findMany({
@@ -330,12 +353,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/playlists/:id", async (req: Request, res: Response) => {
     try {
+      const id = getParam(req, "id");
       const { name, description, games, isPublic, playCount } = req.body;
 
       const [updatedPlaylist] = await db
         .update(playlists)
         .set({ name, description, games, isPublic, playCount })
-        .where(eq(playlists.id, req.params.id))
+        .where(eq(playlists.id, id))
         .returning();
 
       if (!updatedPlaylist) {
@@ -351,9 +375,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/playlists/:id", async (req: Request, res: Response) => {
     try {
+      const id = getParam(req, "id");
       const [deletedPlaylist] = await db
         .delete(playlists)
-        .where(eq(playlists.id, req.params.id))
+        .where(eq(playlists.id, id))
         .returning();
 
       if (!deletedPlaylist) {
@@ -416,12 +441,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/sessions/:id", async (req: Request, res: Response) => {
     try {
+      const id = getParam(req, "id");
       const { players, status, currentGameIndex } = req.body;
 
       const [updatedSession] = await db
         .update(sessions)
         .set({ players, status, currentGameIndex })
-        .where(eq(sessions.id, req.params.id))
+        .where(eq(sessions.id, id))
         .returning();
 
       if (!updatedSession) {
@@ -437,9 +463,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/sessions/:id", async (req: Request, res: Response) => {
     try {
+      const id = getParam(req, "id");
       const [deletedSession] = await db
         .delete(sessions)
-        .where(eq(sessions.id, req.params.id))
+        .where(eq(sessions.id, id))
         .returning();
 
       if (!deletedSession) {
@@ -456,8 +483,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Custom Games routes
   app.get("/api/custom-games", async (req: Request, res: Response) => {
     try {
-      const userId = req.query.userId as string;
-      const draftsOnly = req.query.drafts === "true";
+      const userId = getQueryParam(req, "userId");
+      const draftsOnly = getQueryParam(req, "drafts") === "true";
 
       if (userId) {
         const userGames = await db.query.customGames.findMany({
@@ -484,8 +511,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/custom-games/:id", async (req: Request, res: Response) => {
     try {
+      const id = getParam(req, "id");
       const game = await db.query.customGames.findFirst({
-        where: eq(customGames.id, req.params.id),
+        where: eq(customGames.id, id),
       });
 
       if (!game) {
@@ -527,6 +555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/custom-games/:id", async (req: Request, res: Response) => {
     try {
+      const id = getParam(req, "id");
       const { metadata, logicLua, assets, chatHistory, isDraft, isPublished } =
         req.body;
 
@@ -541,7 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [updatedGame] = await db
         .update(customGames)
         .set(updateData)
-        .where(eq(customGames.id, req.params.id))
+        .where(eq(customGames.id, id))
         .returning();
 
       if (!updatedGame) {
@@ -557,9 +586,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/custom-games/:id", async (req: Request, res: Response) => {
     try {
+      const id = getParam(req, "id");
       const [deletedGame] = await db
         .delete(customGames)
-        .where(eq(customGames.id, req.params.id))
+        .where(eq(customGames.id, id))
         .returning();
 
       if (!deletedGame) {
@@ -580,7 +610,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     "/api/games/:gameId/artifacts",
     async (req: Request, res: Response) => {
       try {
-        const { gameId } = req.params;
+        const gameId = getParam(req, "gameId");
 
         const game = await db.query.customGames.findFirst({
           where: eq(customGames.id, gameId),
@@ -608,7 +638,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     "/api/games/:gameId/artifacts",
     async (req: Request, res: Response) => {
       try {
-        const { gameId } = req.params;
+        const gameId = getParam(req, "gameId");
         const { metadata, logicLua, assets } = req.body;
 
         const game = await db.query.customGames.findFirst({
