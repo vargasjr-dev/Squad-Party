@@ -43,8 +43,8 @@ npm install
 cp .env.example .env
 # Edit .env with your database URL and API keys
 
-# Push database schema
-npm run db:push
+# Apply database migrations
+npm run db:migrate
 
 # Start development servers
 npm run dev          # Web (Next.js)
@@ -58,6 +58,29 @@ npm run server:dev   # Backend API
 |----------|-------------|
 | `DATABASE_URL` | PostgreSQL connection string |
 | `ANTHROPIC_API_KEY` | Claude API key for Game Studio |
+
+## 🗃 Database
+
+Squad Party uses PostgreSQL with Drizzle ORM and migration-based schema management.
+
+### Migration Commands
+
+```bash
+npm run db:generate   # Generate migration from schema changes
+npm run db:migrate    # Apply pending migrations
+npm run db:push       # Direct push (development only)
+npm run db:studio     # Open Drizzle Studio
+```
+
+### Workflow
+
+1. Modify `shared/schema.ts`
+2. Run `npm run db:generate` to create migration
+3. Review the generated SQL in `migrations/`
+4. Commit and push
+5. Run `npm run db:migrate` on deploy
+
+See [migrations/README.md](./migrations/README.md) for detailed documentation.
 
 ## 📁 Project Structure
 
