@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
-  { href: "/play", label: "Play", emoji: "🎮" },
+  { href: "/sessions", label: "Play", emoji: "🎮" },
   { href: "/games", label: "Games", emoji: "🎲" },
   { href: "/profile", label: "Profile", emoji: "👤" },
 ];
