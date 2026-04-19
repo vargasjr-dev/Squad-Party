@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/sessions", label: "Play", emoji: "🎮" },
-  { href: "/games", label: "Games", emoji: "🎲" },
+  { href: "/playlists", label: "Playlists", emoji: "🎵" },
   { href: "/profile", label: "Profile", emoji: "👤" },
 ];
 
