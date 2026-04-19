@@ -1,0 +1,50 @@
+name: Database Schema Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "shared/schema.ts"
+      - ".github/workflows/db-sync.yml"
+  workflow_dispatch:
+
+jobs:
+  sync-schema:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Link to Vercel project
+        run: |
+          vercel link --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Pull environment variables from Vercel
+        run: vercel env pull .env.local --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Load environment and push schema to database
+        run: |
+          set -a
+          source .env.local
+          set +a
+          npx drizzle-kit push --force
