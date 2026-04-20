@@ -4,11 +4,22 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Squad Party",
-  description: "Party games with your squad",
+  description:
+    "Party games with your squad — trivia, drawing, word games, and custom creations. One link, everyone plays.",
   openGraph: {
     title: "Squad Party",
-    description: "Party games with your squad",
+    description:
+      "Party games with your squad — trivia, drawing, word games, and custom creations.",
     type: "website",
+  },
+  manifest: "/manifest.json",
+  themeColor: "#FF6B6B",
+  icons: {
+    icon: [
+      { url: "/logo-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/logo-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180" }],
   },
 };
 
