@@ -28,7 +28,7 @@ export function useWebSocket({
 }: UseWebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [status, setStatus] = useState<WSStatus>("disconnected");
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -72,7 +72,7 @@ export function useWebSocket({
   }, []);
 
   const disconnect = useCallback(() => {
-    clearTimeout(reconnectTimer.current);
+    if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
     wsRef.current?.close();
     wsRef.current = null;
     setStatus("disconnected");
@@ -81,7 +81,7 @@ export function useWebSocket({
   useEffect(() => {
     connect();
     return () => {
-      clearTimeout(reconnectTimer.current);
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
       wsRef.current?.close();
     };
   }, [connect]);

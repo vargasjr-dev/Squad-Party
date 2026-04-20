@@ -15,11 +15,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { hostId, playlistId, code } = body;
+  const { hostId, hostName, playlistId, playlistName } = body;
 
-  if (!hostId) {
+  if (!hostId || !playlistId || !playlistName || !hostName) {
     return NextResponse.json(
-      { error: "hostId required" },
+      { error: "hostId, hostName, playlistId, and playlistName are required" },
       { status: 400 },
     );
   }
@@ -29,8 +29,9 @@ export async function POST(request: NextRequest) {
     .values({
       id: nanoid(),
       hostId,
-      playlistId: playlistId || null,
-      code: code || nanoid(6).toUpperCase(),
+      hostName,
+      playlistId,
+      playlistName,
       status: "waiting",
     })
     .returning();
