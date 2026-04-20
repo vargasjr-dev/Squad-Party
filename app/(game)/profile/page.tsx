@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { authClient } from "~/lib/auth.client";
 
 /**
@@ -25,12 +26,12 @@ export default function ProfilePage() {
         <p className="text-text-secondary mb-6">
           Create an account or sign in to view your profile.
         </p>
-        <a
+        <Link
           href="/api/auth/signin"
           className="inline-flex items-center justify-center bg-gradient-to-r from-coral to-[#FF8E8E] text-white font-semibold px-6 py-3 rounded-xl hover:scale-[1.02] transition-all"
         >
           Sign In
-        </a>
+        </Link>
       </div>
     );
   }

@@ -79,8 +79,8 @@ export default function PublishGamePage() {
           <div className="text-6xl mb-6">🎉</div>
           <h1 className="text-2xl font-bold mb-3">Game Published!</h1>
           <p className="text-text-secondary mb-8">
-            &ldquo;{name}&rdquo; is now live. Other players can discover
-            and play your game!
+            &ldquo;{name}&rdquo; is now live. Other players can discover and
+            play your game!
           </p>
           <div className="flex gap-3 justify-center">
             <button
@@ -151,9 +151,7 @@ export default function PublishGamePage() {
 
           {/* Player Count */}
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Players
-            </label>
+            <label className="block text-sm font-medium mb-2">Players</label>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-text-secondary">Min</span>
@@ -213,7 +211,9 @@ export default function PublishGamePage() {
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && (e.preventDefault(), handleAddTag())
+                }
                 placeholder="trivia, speed, strategy..."
                 className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 focus:border-coral/50 focus:outline-none text-sm"
               />

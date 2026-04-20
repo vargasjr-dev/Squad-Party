@@ -128,9 +128,7 @@ export default function SessionLobbyPage() {
 
       {/* Players */}
       <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-4">
-          Players ({playerCount})
-        </h2>
+        <h2 className="text-lg font-semibold mb-4">Players ({playerCount})</h2>
         <div className="space-y-2">
           {session.players.length === 0 ? (
             <p className="text-text-secondary text-sm py-4 text-center">

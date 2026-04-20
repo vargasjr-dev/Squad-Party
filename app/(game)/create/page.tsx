@@ -26,7 +26,7 @@ export default function GameCreationPage() {
       id: "system-welcome",
       role: "assistant",
       content:
-        "Hey! I'm your game designer. Describe a mini-game you want to create — like \"a trivia game about movies\" or \"a reaction-speed tapping game\" — and I'll build it for you! 🎮",
+        'Hey! I\'m your game designer. Describe a mini-game you want to create — like "a trivia game about movies" or "a reaction-speed tapping game" — and I\'ll build it for you! 🎮',
       timestamp: Date.now(),
     },
   ]);
@@ -88,9 +88,7 @@ export default function GameCreationPage() {
           accumulated += decoder.decode(value, { stream: true });
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantMessage.id
-                ? { ...m, content: accumulated }
-                : m,
+              m.id === assistantMessage.id ? { ...m, content: accumulated } : m,
             ),
           );
         }
