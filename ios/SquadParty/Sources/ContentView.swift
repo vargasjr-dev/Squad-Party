@@ -8,7 +8,8 @@ struct ContentView: View {
         if appState.isAuthenticated {
             MainTabView()
         } else {
-            WelcomeView()
+            AuthView(baseURL: appState.baseURL)
+                .environmentObject(appState)
         }
     }
 }
@@ -19,7 +20,7 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $appState.selectedTab) {
-            DiscoverTab()
+            DiscoverView()
                 .tabItem {
                     Label("Discover", systemImage: "globe")
                 }
@@ -31,13 +32,13 @@ struct MainTabView: View {
                 }
                 .tag(AppState.Tab.create)
 
-            SessionsTab()
+            SessionsView()
                 .tabItem {
                     Label("Sessions", systemImage: "gamecontroller")
                 }
                 .tag(AppState.Tab.sessions)
 
-            ProfileTab()
+            ProfileView()
                 .tabItem {
                     Label("Profile", systemImage: "person.circle")
                 }
@@ -96,38 +97,13 @@ struct WelcomeView: View {
 
 // MARK: - Tab Placeholders
 
-struct DiscoverTab: View {
-    var body: some View {
-        NavigationStack {
-            Text("Discover games from the community")
-                .navigationTitle("Discover")
-        }
-    }
-}
-
+// Tab views now live in Screens/ — DiscoverView, SessionsView, ProfileView.
+// CreateTab (Game Studio) stays as placeholder until Phase 5 Item 3.
 struct CreateTab: View {
     var body: some View {
         NavigationStack {
             Text("Create games with AI")
                 .navigationTitle("Game Studio")
-        }
-    }
-}
-
-struct SessionsTab: View {
-    var body: some View {
-        NavigationStack {
-            Text("Your active sessions")
-                .navigationTitle("Sessions")
-        }
-    }
-}
-
-struct ProfileTab: View {
-    var body: some View {
-        NavigationStack {
-            Text("Your profile and stats")
-                .navigationTitle("Profile")
         }
     }
 }
