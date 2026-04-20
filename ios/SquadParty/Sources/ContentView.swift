@@ -26,7 +26,7 @@ struct MainTabView: View {
                 }
                 .tag(AppState.Tab.discover)
 
-            CreateTab()
+            GameStudioView()
                 .tabItem {
                     Label("Create", systemImage: "paintbrush")
                 }
@@ -97,13 +97,4 @@ struct WelcomeView: View {
 
 // MARK: - Tab Placeholders
 
-// Tab views now live in Screens/ — DiscoverView, SessionsView, ProfileView.
-// CreateTab (Game Studio) stays as placeholder until Phase 5 Item 3.
-struct CreateTab: View {
-    var body: some View {
-        NavigationStack {
-            Text("Create games with AI")
-                .navigationTitle("Game Studio")
-        }
-    }
-}
+// All tab views now live in Screens/ — real implementations.
