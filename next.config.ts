@@ -1,26 +1,65 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Force SWC even though babel.config.js exists (for Expo)
-  experimental: {
-    forceSwcTransforms: true,
+  // ─── Performance ─────────────────────────────────────
+  // Enable React strict mode for better development warnings
+  reactStrictMode: true,
+
+  // ─── Images ──────────────────────────────────────────
+  images: {
+    // Optimize images from these external domains
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "squad-party.vercel.app",
+      },
+    ],
+    // Modern formats for smaller bundles
+    formats: ["image/avif", "image/webp"],
   },
-  // Disable type checking during build (run separately)
+
+  // ─── Build ───────────────────────────────────────────
+  // Disable type checking during build (run separately in CI)
   typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
-    // Only lint Next.js app directory
-    dirs: ["app"],
+    dirs: ["app", "components", "lib"],
   },
-  // Ignore Expo/React Native files during Next.js build
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "react-native$": "react-native-web",
-    };
-    return config;
+
+  // ─── Headers ─────────────────────────────────────────
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+        ],
+      },
+      {
+        // Cache static assets aggressively
+        source: "/(.*)\\.(png|jpg|jpeg|gif|svg|ico|webp|avif|woff2)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+    ];
   },
+
   pageExtensions: ["tsx", "ts", "jsx", "js"],
 };
 
