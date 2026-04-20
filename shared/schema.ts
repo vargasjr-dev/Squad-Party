@@ -7,7 +7,6 @@ import {
   jsonb,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -114,10 +113,10 @@ export const insertCustomGameSchema = createInsertSchema(customGames).omit({
 });
 
 export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertUser = typeof users.$inferInsert;
 export type Playlist = typeof playlists.$inferSelect;
-export type InsertPlaylist = z.infer<typeof insertPlaylistSchema>;
+export type InsertPlaylist = typeof playlists.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
-export type InsertSession = z.infer<typeof insertSessionSchema>;
+export type InsertSession = typeof sessions.$inferInsert;
 export type CustomGame = typeof customGames.$inferSelect;
-export type InsertCustomGame = z.infer<typeof insertCustomGameSchema>;
+export type InsertCustomGame = typeof customGames.$inferInsert;

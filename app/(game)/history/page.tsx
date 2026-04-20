@@ -37,9 +37,7 @@ export default function SessionHistoryPage() {
   // Filter to sessions the user participated in
   const userId = session?.user?.id;
   const mySessions = userId
-    ? sessions.filter((s) =>
-        s.players.some((p) => p.id === userId),
-      )
+    ? sessions.filter((s) => s.players.some((p) => p.id === userId))
     : sessions;
 
   const finished = mySessions
@@ -124,13 +122,7 @@ export default function SessionHistoryPage() {
   );
 }
 
-function StatCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: number | string;
-}) {
+function StatCard({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded-xl p-4 bg-white/5 border border-white/10 text-center">
       <p className="text-2xl font-bold">{value}</p>
@@ -186,8 +178,7 @@ function HistoryCard({
           </div>
           <p className="text-text-secondary text-sm mt-1">
             {session.hostName} · {playerCount} player
-            {playerCount !== 1 ? "s" : ""} ·{" "}
-            {session.currentGameIndex} game
+            {playerCount !== 1 ? "s" : ""} · {session.currentGameIndex} game
             {session.currentGameIndex !== 1 ? "s" : ""}
           </p>
           <p className="text-text-secondary text-xs mt-1">{dateStr}</p>

@@ -14,7 +14,7 @@
     "jsx": "preserve",
     "incremental": true,
     "paths": {
-      "~/*": ["./src/*"],
+      "~/*": ["./*"],
       "@shared/*": ["./shared/*"]
     },
     "plugins": [
@@ -25,5 +25,5 @@
     "types": ["node"]
   },
   "include": ["**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"]
+  "exclude": ["node_modules", "build", "dist", "**/*.test.ts", "reference"]
 }

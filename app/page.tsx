@@ -32,8 +32,8 @@ export default function Home() {
           Squad Party
         </h1>
         <p className="text-xl text-text-secondary mb-10 max-w-md">
-          Party games with your squad — trivia, drawing, word games, and
-          custom creations. One link, everyone plays.
+          Party games with your squad — trivia, drawing, word games, and custom
+          creations. One link, everyone plays.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -74,7 +74,10 @@ export default function Home() {
       </section>
 
       {/* Download */}
-      <section id="download" className="max-w-2xl mx-auto px-6 py-16 text-center">
+      <section
+        id="download"
+        className="max-w-2xl mx-auto px-6 py-16 text-center"
+      >
         <h2 className="text-3xl font-bold mb-4">Get Squad Party</h2>
         <p className="text-text-secondary mb-8">
           Play instantly on the web, or download the native app for the best
@@ -104,10 +107,7 @@ export default function Home() {
       <footer className="border-t border-white/10 py-8 text-center text-text-secondary text-sm">
         <p>
           Built by{" "}
-          <a
-            href="https://vargasjr.dev"
-            className="text-coral hover:underline"
-          >
+          <a href="https://vargasjr.dev" className="text-coral hover:underline">
             VargasJR
           </a>
         </p>

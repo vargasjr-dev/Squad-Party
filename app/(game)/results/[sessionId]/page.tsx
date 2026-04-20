@@ -41,7 +41,12 @@ export default function RoundResultsPage() {
           : data;
         if (session) {
           const players = (session.players || []).map(
-            (p: { id: string; name: string; score?: number; gamesWon?: number }) => ({
+            (p: {
+              id: string;
+              name: string;
+              score?: number;
+              gamesWon?: number;
+            }) => ({
               ...p,
               score: p.score || 0,
               gamesWon: p.gamesWon || 0,
@@ -108,14 +113,10 @@ export default function RoundResultsPage() {
         <div
           className={`rounded-2xl p-6 bg-gradient-to-br from-yellow-500/20 to-orange-500/10 border border-yellow-500/30 text-center mb-6 transition-all duration-1000 delay-300 ${revealed ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
         >
-          <p className="text-yellow-400 text-sm font-medium mb-2">
-            👑 Winner
-          </p>
+          <p className="text-yellow-400 text-sm font-medium mb-2">👑 Winner</p>
           <p className="text-2xl font-bold">
             {winner.name}
-            {isMe(winner.id) && (
-              <span className="text-coral ml-2">(You!)</span>
-            )}
+            {isMe(winner.id) && <span className="text-coral ml-2">(You!)</span>}
           </p>
           <p className="text-3xl font-bold text-yellow-400 mt-2">
             {winner.score} pts

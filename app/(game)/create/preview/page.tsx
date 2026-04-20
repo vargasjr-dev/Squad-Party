@@ -104,7 +104,11 @@ export default function GamePreviewPage() {
                 : "text-text-secondary hover:text-white"
             }`}
           >
-            {tab === "preview" ? "🎮 Preview" : tab === "code" ? "📝 Code" : "📋 Logs"}
+            {tab === "preview"
+              ? "🎮 Preview"
+              : tab === "code"
+                ? "📝 Code"
+                : "📋 Logs"}
           </button>
         ))}
       </div>

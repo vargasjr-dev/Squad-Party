@@ -7,8 +7,7 @@ export default function PlayPage() {
     <div className="max-w-2xl mx-auto px-6 py-12 text-center">
       <h1 className="text-3xl font-bold mb-4">Play</h1>
       <p className="text-text-secondary mb-8">
-        Join a party or create your own. Games start when everyone&apos;s
-        ready.
+        Join a party or create your own. Games start when everyone&apos;s ready.
       </p>
 
       <div className="rounded-2xl p-8 bg-white/5 border border-white/10">

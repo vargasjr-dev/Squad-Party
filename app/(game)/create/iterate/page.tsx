@@ -32,7 +32,7 @@ export default function GameIteratePage() {
       id: "system-welcome",
       role: "assistant",
       content:
-        "Your game is looking good! Want to refine it? Try things like:\n\n• \"Make the timer shorter\"\n• \"Add a bonus round\"\n• \"Change the scoring to be based on speed\"\n• \"Make it harder after round 3\"\n\nI'll update the Lua code and rules for you! 🎮",
+        'Your game is looking good! Want to refine it? Try things like:\n\n• "Make the timer shorter"\n• "Add a bonus round"\n• "Change the scoring to be based on speed"\n• "Make it harder after round 3"\n\nI\'ll update the Lua code and rules for you! 🎮',
       timestamp: Date.now(),
       type: "text",
     },
@@ -97,9 +97,7 @@ export default function GameIteratePage() {
           accumulated += decoder.decode(value, { stream: true });
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantMessage.id
-                ? { ...m, content: accumulated }
-                : m,
+              m.id === assistantMessage.id ? { ...m, content: accumulated } : m,
             ),
           );
         }
@@ -145,7 +143,9 @@ export default function GameIteratePage() {
       <div className="flex items-center justify-between px-6 py-3 border-b border-white/10">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push("/create/preview?game=" + (gameId ?? ""))}
+            onClick={() =>
+              router.push("/create/preview?game=" + (gameId ?? ""))
+            }
             className="text-text-secondary text-sm hover:text-white"
           >
             ← Back to Preview

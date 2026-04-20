@@ -134,9 +134,7 @@ export default function DiscoverPage() {
             {popularTags.map((tag) => (
               <button
                 key={tag}
-                onClick={() =>
-                  setActiveTag(activeTag === tag ? null : tag)
-                }
+                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
                 className={`px-2.5 py-1 rounded-full text-xs transition ${
                   activeTag === tag
                     ? "bg-coral/20 text-coral"
@@ -205,8 +203,8 @@ export default function DiscoverPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-text-secondary">
-                    by {game.creatorName} • {game.minPlayers}-
-                    {game.maxPlayers} players
+                    by {game.creatorName} • {game.minPlayers}-{game.maxPlayers}{" "}
+                    players
                   </span>
                   <button
                     onClick={() => handlePlay(game.id)}
