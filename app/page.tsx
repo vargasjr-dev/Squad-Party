@@ -175,9 +175,14 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-white/10 py-8 px-6">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-text-secondary text-sm">
-            © {new Date().getFullYear()} Squad Party
-          </p>
+          <div>
+            <p className="text-text-secondary text-sm">
+              © {new Date().getFullYear()} Squad Party
+            </p>
+            <p className="text-text-secondary text-xs mt-1">
+              © {new Date().getFullYear()} VargasJR LLC. All rights reserved.
+            </p>
+          </div>
           <div className="flex items-center gap-6 text-sm text-text-secondary">
             <Link href="/play" className="hover:text-coral transition-colors">
               Play
