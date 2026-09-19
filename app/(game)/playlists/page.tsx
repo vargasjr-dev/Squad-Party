@@ -41,16 +41,27 @@ export default function PlaylistsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
-      <div className="flex items-center justify-between mb-8">
-        {session?.user && (
+      {!session?.user ? (
+        <div className="rounded-2xl p-6 bg-white/5 border border-white/10 text-center mb-8">
+          <p className="text-text-secondary text-sm">
+            You&apos;re playing as a guest — play any public playlist, no
+            account needed.{" "}
+            <Link href="/profile" className="text-coral hover:underline">
+              Sign in
+            </Link>{" "}
+            to build your own playlists.
+          </p>
+        </div>
+      ) : (
+        <div className="flex items-center justify-end mb-8">
           <button
             onClick={() => setShowCreate(!showCreate)}
             className="inline-flex items-center gap-2 bg-gradient-to-r from-coral to-[#FF8E8E] text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:scale-[1.02] transition-all"
           >
             + New Playlist
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {showCreate && session?.user && (
         <CreatePlaylistForm
