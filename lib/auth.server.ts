@@ -23,6 +23,7 @@ const socialProviders =
     : undefined;
 
 export const auth = betterAuth({
+  secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
