@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import AuthForm from "~/components/AuthForm";
 import { authClient } from "~/lib/auth.client";
 
 /**
@@ -21,17 +21,14 @@ export default function ProfilePage() {
 
   if (!session?.user) {
     return (
-      <div className="max-w-md mx-auto px-6 py-12 text-center">
-        <h1 className="text-2xl font-bold mb-4">Sign In Required</h1>
-        <p className="text-text-secondary mb-6">
-          Create an account or sign in to view your profile.
-        </p>
-        <Link
-          href="/api/auth/signin"
-          className="inline-flex items-center justify-center bg-gradient-to-r from-coral to-[#FF8E8E] text-white font-semibold px-6 py-3 rounded-xl hover:scale-[1.02] transition-all"
-        >
-          Sign In
-        </Link>
+      <div className="max-w-md mx-auto px-6 py-12">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold mb-2">Sign In</h1>
+          <p className="text-text-secondary text-sm">
+            Sign in or create an account to track your stats and playlists.
+          </p>
+        </div>
+        <AuthForm />
       </div>
     );
   }
