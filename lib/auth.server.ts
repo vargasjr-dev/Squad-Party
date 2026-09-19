@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../server/db";
+import { user, authSession, account, verification } from "../shared/schema";
 
 /**
  * Server-side auth configuration — reuses the vellymon.game pattern.
@@ -24,6 +25,12 @@ const socialProviders =
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
+    schema: {
+      user,
+      session: authSession,
+      account,
+      verification,
+    },
   }),
   emailAndPassword: {
     enabled: true,
