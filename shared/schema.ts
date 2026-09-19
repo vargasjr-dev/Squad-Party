@@ -89,12 +89,12 @@ export const playlists = pgTable("playlists", {
 
 export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
-  // Plain text (no FK): guests can host without an account row.
+  // Plain text (no FKs): guests can host, and a session can reference
+  // either a playlist or a custom game by id.
   hostId: text("host_id").notNull(),
   hostName: text("host_name").notNull(),
-  playlistId: text("playlist_id")
-    .notNull()
-    .references(() => playlists.id),
+  // Plain text (no FK): can reference a playlist id or a custom game id.
+  playlistId: text("playlist_id").notNull(),
   playlistName: text("playlist_name").notNull(),
   players: jsonb("players").$type<SessionPlayer[]>().default([]).notNull(),
   status: text("status")

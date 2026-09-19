@@ -1,58 +1,58 @@
 import { NextRequest } from "next/server";
 
+const FIREWORKS_URL = "https://api.fireworks.ai/inference/v1/chat/completions";
+const GLM_MODEL = "accounts/fireworks/models/glm-5p3-flash";
+
+const SYSTEM_PROMPT = [
+  "You are the Squad Party Studio designer, a playful game design partner.",
+  "The user describes a party mini-game; help them refine it with short,",
+  "energetic replies. Focus on rules a group of friends can play in",
+  "minutes: trivia, drawing, word games, social deduction, speed rounds.",
+].join(" ");
+
 /**
- * POST /api/create — Game Studio chat.
- *
- * Streams Claude's response for conversational game creation.
- * Requires ANTHROPIC_API_KEY; without it we tell the client the
- * generator isn't connected yet (the UI shows a friendly message).
+ * POST /api/create — Studio chat, powered by GLM 5.3 Flash on Fireworks.
+ * Streams plain text back to the client. Requires FIREWORKS_API_KEY;
+ * without it we return a 503 the UI renders as a friendly notice.
  */
 export async function POST(request: NextRequest) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.FIREWORKS_API_KEY;
   const { messages } = await request.json();
 
   if (!apiKey) {
     return Response.json(
-      { error: "Game generation isn't connected yet — coming soon!" },
+      { error: "The game designer isn't connected yet — coming soon!" },
       { status: 503 },
     );
   }
 
-  const systemPrompt = [
-    "You are the Squad Party Game Studio, a playful game designer.",
-    "The user describes a party mini-game; help them refine it and keep",
-    "replies short and energetic. Focus on rules a group of friends can",
-    "play in minutes: trivia, drawing, word games, social deduction,",
-    "speed rounds.",
-  ].join(" ");
-
-  const upstream = await fetch("https://api.anthropic.com/v1/messages", {
+  const upstream = await fetch(FIREWORKS_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-5",
-      max_tokens: 1024,
+      model: GLM_MODEL,
       stream: true,
-      system: systemPrompt,
-      messages: messages.map((m: { role: string; content: string }) => ({
-        role: m.role === "assistant" ? "assistant" : "user",
-        content: m.content,
-      })),
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        ...messages.map((m: { role: string; content: string }) => ({
+          role: m.role === "assistant" ? "assistant" : "user",
+          content: m.content,
+        })),
+      ],
     }),
   });
 
   if (!upstream.ok || !upstream.body) {
     return Response.json(
-      { error: "The game generator hiccuped. Try again." },
+      { error: "The game designer hiccuped. Try again." },
       { status: 502 },
     );
   }
 
-  // Convert Anthropic SSE into a plain text stream the client reads.
+  // Fireworks streams OpenAI-style SSE; convert to a plain text stream.
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   const reader = upstream.body.getReader();
@@ -74,12 +74,8 @@ export async function POST(request: NextRequest) {
         if (payload === "[DONE]") continue;
         try {
           const event = JSON.parse(payload);
-          if (
-            event.type === "content_block_delta" &&
-            event.delta?.type === "text_delta"
-          ) {
-            controller.enqueue(encoder.encode(event.delta.text));
-          }
+          const text = event.choices?.[0]?.delta?.content;
+          if (text) controller.enqueue(encoder.encode(text));
         } catch {
           // Partial JSON across chunks — keep it in the buffer.
         }
