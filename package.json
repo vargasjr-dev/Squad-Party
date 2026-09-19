@@ -9,9 +9,7 @@
     "server:dev": "NODE_ENV=development tsx server/index.ts",
     "server:build": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=server_dist",
     "server:prod": "NODE_ENV=production node server_dist/index.js",
-    "db:push": "drizzle-kit push",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:push": "bun run scripts/db-push.ts",
     "db:studio": "drizzle-kit studio",
     "lint": "next lint",
     "check:types": "tsc --noEmit",
@@ -22,6 +20,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@tanstack/react-query": "^5.90.7",
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.3",
@@ -60,5 +59,8 @@
     "typescript": "~5.9.2",
     "vitest": "^3.2.3"
   },
-  "private": true
+  "private": true,
+  "trustedDependencies": [
+    "unrs-resolver"
+  ]
 }
