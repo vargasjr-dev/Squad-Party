@@ -1,202 +1,87 @@
 import Link from "next/link";
 
-const FEATURES = [
-  {
-    emoji: "🎲",
-    title: "Party Games",
-    description: "Trivia, drawing, word games, and more — all in one app.",
-  },
-  {
-    emoji: "👥",
-    title: "Play Together",
-    description: "One host, everyone joins. No accounts needed for guests.",
-  },
-  {
-    emoji: "🎨",
-    title: "Custom Games",
-    description: "Build your own games with the AI-powered Game Studio.",
-  },
-  {
-    emoji: "📱",
-    title: "Cross-Platform",
-    description: "Web, iOS, and Android. Play from any device.",
-  },
-];
-
-const STEPS = [
-  {
-    step: "1",
-    title: "Create a Session",
-    description:
-      "Pick a game or build one with the Game Studio. Get a join code.",
-  },
-  {
-    step: "2",
-    title: "Share the Link",
-    description:
-      "Send the code to your squad. No downloads or signups needed to join.",
-  },
-  {
-    step: "3",
-    title: "Play Together",
-    description: "Everyone plays from their own device. Results in real time.",
-  },
-];
+const FLOATING_EMOJI = ["🎲", "🎨", "🧠", "💬", "🏆", "🎭", "⚡", "🃏"];
 
 const GAME_TYPES = [
-  { emoji: "🧠", name: "Trivia" },
-  { emoji: "🎨", name: "Drawing" },
-  { emoji: "💬", name: "Word Games" },
-  { emoji: "🏆", name: "Competitions" },
-  { emoji: "🎭", name: "Social Deduction" },
-  { emoji: "⚡", name: "Speed Rounds" },
+  "Trivia",
+  "Drawing",
+  "Word Games",
+  "Social Deduction",
+  "Speed Rounds",
 ];
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-navy to-charcoal text-white">
+    <main className="relative h-dvh overflow-hidden bg-gradient-to-b from-navy to-charcoal text-white flex flex-col">
+      {/* Floating game pieces */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        {FLOATING_EMOJI.map((emoji, i) => (
+          <span
+            key={emoji}
+            className="absolute opacity-10 text-6xl sm:text-7xl animate-float select-none"
+            style={{
+              left: `${(i * 12.5 + 6) % 90}%`,
+              top: `${(i % 2 === 0 ? 12 : 62) + ((i * 7) % 18)}%`,
+              animationDelay: `${i * 0.9}s`,
+              animationDuration: `${7 + (i % 4)}s`,
+            }}
+          >
+            {emoji}
+          </span>
+        ))}
+      </div>
+
       {/* Hero */}
-      <section className="flex flex-col items-center justify-center px-6 pt-24 pb-20 text-center">
-        <div className="inline-flex items-center gap-2 bg-coral/10 border border-coral/20 text-coral text-sm font-medium px-4 py-1.5 rounded-full mb-6">
-          🎉 Now in beta — join the party
-        </div>
-        <h1 className="text-5xl sm:text-6xl font-bold mb-4 bg-gradient-to-r from-coral to-yellow bg-clip-text text-transparent">
+      <section className="relative flex-1 flex flex-col items-center justify-center px-6 text-center">
+        <h1 className="text-6xl sm:text-8xl font-extrabold tracking-tight bg-gradient-to-r from-coral via-[#FFB08E] to-yellow bg-clip-text text-transparent drop-shadow-[0_2px_24px_rgba(255,111,97,0.25)]">
           Squad Party
         </h1>
-        <p className="text-xl text-text-secondary mb-10 max-w-lg">
-          Party games with your squad — trivia, drawing, word games, and custom
-          creations. One link, everyone plays.
+        <p className="mt-4 text-lg sm:text-xl text-text-secondary max-w-md">
+          One host. One link. Everyone plays.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="mt-10 flex flex-col sm:flex-row gap-4">
           <Link
             href="/play"
-            className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-coral to-[#FF8E8E] text-white font-semibold text-lg px-8 py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-coral/25"
+            className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-coral to-[#FF8E8E] text-white font-semibold text-lg px-8 py-4 rounded-2xl hover:scale-[1.03] active:scale-[0.98] transition-all shadow-lg shadow-coral/25"
           >
             🎮 Play on Web
           </Link>
-          <a
-            href="#download"
-            className="inline-flex items-center justify-center gap-2 bg-white/10 text-white font-semibold text-lg px-8 py-4 rounded-xl border border-white/20 hover:bg-white/15 transition-all"
+          <Link
+            href="/mobile"
+            className="inline-flex items-center justify-center gap-2 bg-white/10 text-white font-semibold text-lg px-8 py-4 rounded-2xl border border-white/20 hover:bg-white/15 hover:scale-[1.03] active:scale-[0.98] transition-all"
           >
             📱 Get the App
-          </a>
+          </Link>
         </div>
-      </section>
 
-      {/* Game Types */}
-      <section className="max-w-3xl mx-auto px-6 pb-16">
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="mt-10 flex flex-wrap justify-center gap-2">
           {GAME_TYPES.map((game) => (
             <span
-              key={game.name}
-              className="inline-flex items-center gap-1.5 bg-white/5 border border-white/10 text-sm text-text-secondary px-4 py-2 rounded-full"
+              key={game}
+              className="text-xs sm:text-sm text-text-secondary/80 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full"
             >
-              {game.emoji} {game.name}
+              {game}
             </span>
           ))}
         </div>
       </section>
 
-      {/* Features */}
-      <section className="max-w-4xl mx-auto px-6 py-16">
-        <h2 className="text-3xl font-bold text-center mb-12">
-          Everything you need for game night
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {FEATURES.map((feature) => (
-            <div
-              key={feature.title}
-              className="rounded-2xl p-6 bg-white/5 border border-white/10 hover:border-coral/30 transition-colors"
-            >
-              <p className="text-3xl mb-3">{feature.emoji}</p>
-              <h3 className="text-lg font-semibold mb-1">{feature.title}</h3>
-              <p className="text-text-secondary text-sm">
-                {feature.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="max-w-4xl mx-auto px-6 py-16">
-        <h2 className="text-3xl font-bold text-center mb-12">
-          Up and running in 30 seconds
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-          {STEPS.map((step) => (
-            <div key={step.step} className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-coral to-yellow text-navy font-bold text-lg mb-4">
-                {step.step}
-              </div>
-              <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
-              <p className="text-text-secondary text-sm">{step.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Download */}
-      <section
-        id="download"
-        className="max-w-2xl mx-auto px-6 py-16 text-center"
-      >
-        <h2 className="text-3xl font-bold mb-4">Get Squad Party</h2>
-        <p className="text-text-secondary mb-8">
-          Play instantly on the web, or download the native app for the best
-          experience.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
-          <Link
-            href="/play"
-            className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-coral to-[#FF8E8E] text-white font-semibold px-6 py-3 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-coral/25"
-          >
-            🎮 Play on Web — Free
-          </Link>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-          <div className="inline-flex items-center justify-center gap-2 bg-white/5 text-text-secondary font-medium px-6 py-3 rounded-xl border border-white/10">
-            🍎 iOS — Coming to TestFlight
-          </div>
-          <div className="inline-flex items-center justify-center gap-2 bg-white/5 text-text-secondary font-medium px-6 py-3 rounded-xl border border-white/10">
-            🤖 Android — Coming Soon
-          </div>
-        </div>
-
-        <p className="text-text-secondary text-sm">
-          Native apps coming soon. Play on the web in the meantime — same
-          experience, no download needed.
-        </p>
-      </section>
-
       {/* Footer */}
-      <footer className="border-t border-white/10 py-8 px-6">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <p className="text-text-secondary text-sm">
-              © {new Date().getFullYear()} Squad Party
-            </p>
-            <p className="text-text-secondary text-xs mt-1">
-              © {new Date().getFullYear()} VargasJR LLC. All rights reserved.
-            </p>
-          </div>
-          <div className="flex items-center gap-6 text-sm text-text-secondary">
-            <Link href="/play" className="hover:text-coral transition-colors">
-              Play
-            </Link>
-            <a
-              href="https://vargasjr.dev"
-              className="hover:text-coral transition-colors"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Built by VargasJR
-            </a>
-          </div>
-        </div>
+      <footer className="relative pb-5 px-6 text-center text-xs text-text-secondary/60">
+        © {new Date().getFullYear()} VargasJR LLC ·{" "}
+        <Link href="/play" className="hover:text-coral transition-colors">
+          Play
+        </Link>{" "}
+        ·{" "}
+        <a
+          href="https://vargasjr.dev"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-coral transition-colors"
+        >
+          Built by VargasJR
+        </a>
       </footer>
     </main>
   );

@@ -14,6 +14,15 @@ const config: Config = {
       fontFamily: {
         sans: ["'Poppins'", "system-ui", "sans-serif"],
       },
+      keyframes: {
+        float: {
+          "0%, 100%": { transform: "translateY(0) rotate(-2deg)" },
+          "50%": { transform: "translateY(-18px) rotate(3deg)" },
+        },
+      },
+      animation: {
+        float: "float 8s ease-in-out infinite",
+      },
     },
   },
   plugins: [],
