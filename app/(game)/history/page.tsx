@@ -62,8 +62,6 @@ export default function SessionHistoryPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
-      <h1 className="text-2xl font-bold mb-6">Game History</h1>
-
       {/* Stats Overview */}
       {userId && totalGames > 0 && (
         <div className="grid grid-cols-3 gap-3 mb-8">

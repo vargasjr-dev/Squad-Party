@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { authClient } from "~/lib/auth.client";
 
 interface Session {
   id: string;
@@ -17,7 +16,6 @@ interface Session {
  * Shows a list of joinable sessions and a button to host a new one.
  */
 export default function SessionsPage() {
-  const { data: session } = authClient.useSession();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,16 +34,13 @@ export default function SessionsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold">Game Sessions</h1>
-        {session?.user && (
-          <Link
-            href="/sessions/new"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-coral to-[#FF8E8E] text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:scale-[1.02] transition-all"
-          >
-            + Host Game
-          </Link>
-        )}
+      <div className="flex items-center justify-end mb-8">
+        <Link
+          href="/sessions/new"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-coral to-[#FF8E8E] text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:scale-[1.02] transition-all"
+        >
+          + Host Game
+        </Link>
       </div>
 
       {loading ? (

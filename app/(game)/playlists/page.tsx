@@ -42,7 +42,6 @@ export default function PlaylistsPage() {
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold">Playlists</h1>
         {session?.user && (
           <button
             onClick={() => setShowCreate(!showCreate)}

@@ -87,7 +87,6 @@ export default function DiscoverPage() {
     <div className="flex flex-col min-h-[calc(100vh-4rem)]">
       {/* Hero */}
       <div className="px-6 py-8 text-center border-b border-white/10">
-        <h1 className="text-3xl font-bold mb-2">🌍 Discover Games</h1>
         <p className="text-text-secondary">
           Browse games created by the Squad Party community
         </p>
