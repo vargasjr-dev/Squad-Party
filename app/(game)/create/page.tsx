@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { authClient } from "~/lib/auth.client";
 
 interface ChatMessage {
@@ -124,14 +125,6 @@ export default function GameCreationPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-white/10">
-        <h1 className="text-xl font-bold">🎨 Game Studio</h1>
-        <p className="text-text-secondary text-sm">
-          Describe a mini-game and I&apos;ll create it
-        </p>
-      </div>
-
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {messages.map((msg) => (
@@ -161,32 +154,44 @@ export default function GameCreationPage() {
       </div>
 
       {/* Input */}
-      <form
-        onSubmit={handleSubmit}
-        className="px-6 py-4 border-t border-white/10"
-      >
-        <div className="flex gap-3">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={
-              session?.user
-                ? "Describe your game idea..."
-                : "Sign in to create games"
-            }
-            disabled={!session?.user || isStreaming}
-            className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-coral/50 focus:outline-none text-sm disabled:opacity-40"
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || !session?.user || isStreaming}
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-coral to-[#FF8E8E] text-white font-semibold text-sm disabled:opacity-40 hover:scale-[1.02] transition-all"
-          >
-            {isStreaming ? "..." : "Send"}
-          </button>
+      {session?.user ? (
+        <form
+          onSubmit={handleSubmit}
+          className="px-6 py-4 border-t border-white/10"
+        >
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={
+                session?.user
+                  ? "Describe your game idea..."
+                  : "Sign in to create games"
+              }
+              disabled={!session?.user || isStreaming}
+              className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-coral/50 focus:outline-none text-sm disabled:opacity-40"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || !session?.user || isStreaming}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-coral to-[#FF8E8E] text-white font-semibold text-sm disabled:opacity-40 hover:scale-[1.02] transition-all"
+            >
+              {isStreaming ? "..." : "Send"}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="px-6 py-4 border-t border-white/10 text-center">
+          <p className="text-text-secondary text-sm">
+            {" "}
+            <Link href="/profile" className="text-coral hover:underline">
+              Sign in
+            </Link>{" "}
+            to start creating games.
+          </p>
         </div>
-      </form>
+      )}
     </div>
   );
 }
