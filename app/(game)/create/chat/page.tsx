@@ -10,11 +10,26 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
+  // Transient (not persisted): live designer reasoning while streaming.
+  reasoning?: string;
 }
+
+interface StreamEvent {
+  type: "reasoning" | "content" | "game_name";
+  text: string;
+}
+
+const WELCOME: ChatMessage = {
+  id: "system-welcome",
+  role: "assistant",
+  content:
+    "Hey! I'm your game designer. Tell me what kind of game you're dreaming up and we'll build it together! 🎮",
+  timestamp: 0,
+};
 
 /**
  * /create/chat — Studio chat editor.
- * Conversational game design powered by GLM 5.3 Flash (Fireworks).
+ * Streams the designer's reasoning + reply (GLM 5.3 Flash on Fireworks).
  * ?game=<id> resumes an existing game's chat; without it, a new game
  * row is created on the first exchange.
  */
@@ -26,15 +41,8 @@ export default function StudioChatPage() {
 
   const [gameName, setGameName] = useState<string | null>(null);
   const [savedGameId, setSavedGameId] = useState<string | null>(gameId);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "system-welcome",
-      role: "assistant",
-      content:
-        "Hey! I'm your game designer. Tell me what kind of game you're dreaming up and we'll build it together! 🎮",
-      timestamp: Date.now(),
-    },
-  ]);
+  const [version, setVersion] = useState(1);
+  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [loadingGame, setLoadingGame] = useState(!!gameId);
@@ -64,6 +72,12 @@ export default function StudioChatPage() {
           : null;
         if (game) {
           setGameName(game.metadata?.name || null);
+          setVersion(
+            Math.max(
+              1,
+              Math.round(parseFloat(game.metadata?.version || "0.1") * 10) || 1,
+            ),
+          );
           if (game.chatHistory?.length) setMessages(game.chatHistory);
         } else {
           router.replace("/create");
@@ -84,25 +98,47 @@ export default function StudioChatPage() {
   }, [auth?.user, isPending, loadGame]);
 
   const saveGame = async (chatHistory: ChatMessage[]) => {
-    const firstUser = chatHistory.find((m) => m.role === "user");
-    const derivedName =
-      gameName ?? firstUser?.content.trim().slice(0, 60) ?? "Untitled game";
+    // Persist only role/content — reasoning is transient.
+    const persisted = chatHistory.map(({ role, content, timestamp, id }) => ({
+      id,
+      role,
+      content,
+      timestamp,
+    }));
     const res = await fetch("/api/games", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         gameId: savedGameId,
-        name: derivedName,
-        chatHistory,
+        name: gameName,
+        chatHistory: persisted,
       }),
     });
     if (res.ok) {
       const game = await res.json();
       setSavedGameId(game.id);
-      setGameName(game.metadata?.name ?? derivedName);
+      setVersion((v) => v + 1);
       if (!gameId && game.id) {
         window.history.replaceState(null, "", `/create/chat?game=${game.id}`);
       }
+    }
+  };
+
+  const handlePlay = async () => {
+    if (!auth?.user || !savedGameId) return;
+    const res = await fetch("/api/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        hostId: auth.user.id,
+        hostName: auth.user.name || "Host",
+        playlistId: savedGameId,
+        playlistName: gameName || "Custom game",
+      }),
+    });
+    if (res.ok) {
+      const session = await res.json();
+      router.push(`/sessions/${session.id}`);
     }
   };
 
@@ -130,6 +166,13 @@ export default function StudioChatPage() {
     };
     setMessages([...historyAfterUser, assistantMessage]);
 
+    const updateAssistant = (patch: Partial<ChatMessage>) =>
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantMessage.id ? { ...m, ...patch } : m,
+        ),
+      );
+
     try {
       const res = await fetch("/api/create", {
         method: "POST",
@@ -142,50 +185,67 @@ export default function StudioChatPage() {
         }),
       });
 
+      let finalContent = "";
+      let finalReasoning = "";
+
       if (res.ok && res.body) {
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
-        let accumulated = "";
+        let ndjson = "";
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          accumulated += decoder.decode(value, { stream: true });
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantMessage.id ? { ...m, content: accumulated } : m,
-            ),
-          );
+          ndjson += decoder.decode(value, { stream: true });
+          const lines = ndjson.split("\n");
+          ndjson = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+              const event: StreamEvent = JSON.parse(line);
+              if (event.type === "reasoning") {
+                finalReasoning += event.text;
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMessage.id
+                      ? { ...m, reasoning: finalReasoning }
+                      : m,
+                  ),
+                );
+              } else if (event.type === "content") {
+                finalContent += event.text;
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMessage.id
+                      ? { ...m, content: finalContent }
+                      : m,
+                  ),
+                );
+              } else if (event.type === "game_name") {
+                setGameName(event.text);
+              }
+            } catch {
+              // Partial line — the next chunk completes it.
+            }
+          }
         }
       } else {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMessage.id
-              ? {
-                  ...m,
-                  content:
-                    "Sorry, I couldn't generate a response. The game designer isn't connected yet — coming soon!",
-                }
-              : m,
-          ),
-        );
+        finalContent =
+          "Sorry, I couldn't generate a response. The game designer isn't connected yet — coming soon!";
+        updateAssistant({ content: finalContent });
       }
 
       await saveGame([
         ...historyAfterUser,
-        { ...assistantMessage, content: "" },
+        {
+          id: assistantMessage.id,
+          role: "assistant",
+          content: finalContent,
+          timestamp: assistantMessage.timestamp,
+        },
       ]);
     } catch {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantMessage.id
-            ? {
-                ...m,
-                content: "Couldn't reach the Studio. Try again.",
-              }
-            : m,
-        ),
-      );
+      updateAssistant({ content: "Couldn't reach the Studio. Try again." });
     }
 
     setIsStreaming(false);
@@ -218,18 +278,45 @@ export default function StudioChatPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
+      {/* Chat header */}
+      <div className="flex items-center gap-3 px-6 py-3 border-b border-white/10 shrink-0">
+        <img
+          src="/designer-avatar.svg"
+          alt="Squad Party designer"
+          className="w-9 h-9 rounded-full"
+        />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold truncate">
+            {gameName ?? "Game Studio"}
+          </p>
+          <p className="text-xs text-text-secondary">
+            v0.{version} · your party game designer
+          </p>
+        </div>
+        {gameName && savedGameId && (
+          <button
+            onClick={handlePlay}
+            className="shrink-0 inline-flex items-center gap-1.5 bg-gradient-to-r from-coral to-[#FF8E8E] text-white font-semibold px-4 py-2 rounded-xl text-sm hover:scale-[1.02] transition-all"
+          >
+            ▶️ Play
+          </button>
+        )}
+      </div>
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-        {gameName && (
-          <p className="text-center text-xs text-text-secondary/60">
-            Editing <span className="text-text-secondary">{gameName}</span>
-          </p>
-        )}
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
+            {msg.role === "assistant" && (
+              <img
+                src="/designer-avatar.svg"
+                alt=""
+                className="w-7 h-7 rounded-full shrink-0 mt-1"
+              />
+            )}
             <div
               className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                 msg.role === "user"
@@ -237,8 +324,21 @@ export default function StudioChatPage() {
                   : "bg-white/5 border border-white/10 text-text-secondary"
               }`}
             >
+              {msg.reasoning && !msg.content && (
+                <p className="text-sm text-text-muted italic whitespace-pre-wrap">
+                  {msg.reasoning.slice(-160)}
+                </p>
+              )}
+              {msg.reasoning && msg.content && (
+                <p className="text-xs text-text-muted/70 italic mb-1">
+                  💭{" "}
+                  {msg.reasoning.length > 60
+                    ? "…" + msg.reasoning.slice(-60)
+                    : msg.reasoning}
+                </p>
+              )}
               <p className="text-sm whitespace-pre-wrap">
-                {msg.content || "..."}
+                {msg.content || (msg.role === "user" ? "" : "...")}
               </p>
             </div>
           </div>
