@@ -18,6 +18,7 @@ const SYSTEM_PROMPT = [
 export async function POST(request: NextRequest) {
   const apiKey = process.env.FIREWORKS_API_KEY;
   const { messages } = await request.json();
+  console.log("[create] start, messages:", Array.isArray(messages) ? messages.length : "?");
 
   if (!apiKey) {
     return Response.json(
@@ -26,24 +27,36 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const upstream = await fetch(FIREWORKS_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: GLM_MODEL,
-      stream: true,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        ...messages.map((m: { role: string; content: string }) => ({
-          role: m.role === "assistant" ? "assistant" : "user",
-          content: m.content,
-        })),
-      ],
-    }),
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(FIREWORKS_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: GLM_MODEL,
+        stream: true,
+        max_tokens: 800,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          ...messages.map((m: { role: string; content: string }) => ({
+            role: m.role === "assistant" ? "assistant" : "user",
+            content: m.content,
+          })),
+        ],
+      }),
+      signal: AbortSignal.timeout(45000),
+    });
+    console.log("[create] upstream status:", upstream.status);
+  } catch (e) {
+    console.error("[create] upstream fetch failed:", (e as Error).message);
+    return Response.json(
+      { error: "The game designer hiccuped. Try again." },
+      { status: 502 },
+    );
+  }
 
   if (!upstream.ok || !upstream.body) {
     return Response.json(
