@@ -69,32 +69,39 @@ export async function POST(request: NextRequest) {
   }
 
   // Fireworks streams OpenAI-style SSE; convert to a plain text stream.
+  // NOTE: pump inside start() — the pull()-based variant never flushes
+  // on Vercel's runtime (response stalls with no headers).
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   const reader = upstream.body.getReader();
   let buffer = "";
 
   const stream = new ReadableStream({
-    async pull(controller) {
-      const { done, value } = await reader.read();
-      if (done) {
-        controller.close();
-        return;
-      }
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-      for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
-        const payload = line.slice(5).trim();
-        if (payload === "[DONE]") continue;
-        try {
-          const event = JSON.parse(payload);
-          const text = event.choices?.[0]?.delta?.content;
-          if (text) controller.enqueue(encoder.encode(text));
-        } catch {
-          // Partial JSON across chunks — keep it in the buffer.
+    async start(controller) {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.startsWith("data:")) continue;
+            const payload = line.slice(5).trim();
+            if (payload === "[DONE]") continue;
+            try {
+              const event = JSON.parse(payload);
+              const text = event.choices?.[0]?.delta?.content;
+              if (text) controller.enqueue(encoder.encode(text));
+            } catch {
+              // Partial JSON across chunks — keep it in the buffer.
+            }
+          }
         }
+        controller.close();
+      } catch (e) {
+        console.error("[create] stream pump failed:", (e as Error).message);
+        controller.error(e);
       }
     },
     cancel() {
