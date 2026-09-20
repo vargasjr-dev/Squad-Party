@@ -31,7 +31,7 @@ export default function StudioChatPage() {
       id: "system-welcome",
       role: "assistant",
       content:
-        'Hey! I\'m your game designer. Describe a mini-game you want to create — like "a trivia game about movies" or "a reaction-speed tapping game" — and I\'ll build it for you! 🎮',
+        "Hey! I'm your game designer. Tell me what kind of game you're dreaming up and we'll build it together! 🎮",
       timestamp: Date.now(),
     },
   ]);
@@ -39,6 +39,15 @@ export default function StudioChatPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [loadingGame, setLoadingGame] = useState(!!gameId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Grow the textarea with content, capped at 4 lines.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 104)}px`;
+  }, [input]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -97,7 +106,7 @@ export default function StudioChatPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     if (!input.trim() || isStreaming) return;
 
@@ -242,14 +251,21 @@ export default function StudioChatPage() {
         onSubmit={handleSubmit}
         className="px-6 py-4 border-t border-white/10"
       >
-        <div className="flex gap-3">
-          <input
-            type="text"
+        <div className="flex items-end gap-3">
+          <textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+            rows={1}
             placeholder="Describe your game idea..."
             disabled={isStreaming}
-            className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-coral/50 focus:outline-none text-sm disabled:opacity-40"
+            className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-coral/50 focus:outline-none text-sm disabled:opacity-40 resize-none leading-5 max-h-[104px] overflow-y-auto"
           />
           <button
             type="submit"
