@@ -18,7 +18,10 @@ const SYSTEM_PROMPT = [
 export async function POST(request: NextRequest) {
   const apiKey = process.env.FIREWORKS_API_KEY;
   const { messages } = await request.json();
-  console.log("[create] start, messages:", Array.isArray(messages) ? messages.length : "?");
+  console.log(
+    "[create] start, messages:",
+    Array.isArray(messages) ? messages.length : "?",
+  );
 
   if (!apiKey) {
     return Response.json(
