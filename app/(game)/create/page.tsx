@@ -107,7 +107,7 @@ export default function StudioPage() {
             href="/create/chat"
             className="inline-flex items-center justify-center bg-white/10 border border-white/20 text-white font-semibold px-6 py-3 rounded-xl hover:bg-white/15 transition-all"
           >
-            🎨 Start your first game
+            🎨 Create your first game
           </Link>
         </div>
       ) : (

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
@@ -12,9 +13,32 @@ const NAV_ITEMS = [
 /**
  * Shared navigation for authenticated game pages.
  * Coral accent on active link, responsive (horizontal on desktop, bottom bar on mobile).
+ * The mobile bar hides while a text input is focused so the keyboard
+ * doesn't crowd it.
  */
 export default function GameNav() {
   const pathname = usePathname();
+  const [typing, setTyping] = useState(false);
+
+  useEffect(() => {
+    const isTextInput = (el: Element | null) =>
+      el instanceof HTMLElement &&
+      (el.tagName === "INPUT" || el.tagName === "TEXTAREA");
+
+    const onFocusIn = (e: FocusEvent) =>
+      setTyping(isTextInput(e.target as Element));
+    const onFocusOut = (e: FocusEvent) =>
+      setTyping((prev) =>
+        isTextInput(e.relatedTarget as Element) ? prev : false,
+      );
+
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+    };
+  }, []);
 
   return (
     <>
@@ -44,8 +68,12 @@ export default function GameNav() {
         </div>
       </nav>
 
-      {/* Mobile: bottom bar */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around px-4 py-3 border-t border-white/10 bg-navy/95 backdrop-blur-sm">
+      {/* Mobile: bottom bar (hidden while typing) */}
+      <nav
+        className={`sm:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around px-4 py-3 border-t border-white/10 bg-navy/95 backdrop-blur-sm transition-opacity ${
+          typing ? "opacity-0 pointer-events-none" : "opacity-100"
+        }`}
+      >
         {NAV_ITEMS.map((item) => (
           <Link
             key={item.href}

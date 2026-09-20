@@ -18,6 +18,12 @@
 }
 
 /* ─── Base Styles ─── */
+html {
+  /* Keyboard/overscroll can expose the root background on mobile — keep it dark. */
+  background-color: var(--navy);
+  overscroll-behavior: none;
+}
+
 body {
   font-family: "Poppins", system-ui, sans-serif;
   background: linear-gradient(135deg, var(--navy) 0%, var(--charcoal) 100%);
